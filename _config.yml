@@ -1,0 +1,11 @@
+# Site settings
+title: Christopher Batey
+email: christopher.batey@gmail.com
+description: "Software software software"
+username: chbatey
+baseurl: ""
+url: "http://www.christopher-batey.co.uk"
+
+# Build settings
+markdown: kramdown
+permalink: pretty
