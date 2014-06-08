@@ -7,5 +7,5 @@ baseurl: ""
 url: "http://www.christopher-batey.co.uk"
 
 # Build settings
-markdown: kramdown
+markdown: redcarpet
 permalink: pretty
