@@ -1,0 +1,327 @@
+---
+
+---
+
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Stubbed Cassandra - an Introduction</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="{{ "/css/reveal.min.css" | prepend: site.baseurl }}">
+    <link rel="stylesheet" href="{{ "/css/theme/default.css" | prepend: site.baseurl }}">
+
+		<!-- For syntax highlighting -->
+    <link rel="stylesheet" href="{{ "/lib/css/zenburn.css" | prepend: site.baseurl }}">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="{{ "/lib/js/html5shiv.js" | prepend: site.baseurl }}"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Stubbed Cassandra</h1>
+					<h3>Testing Cassandra the easy way</h3>
+					<p>
+						<small>Created by <a href="http://christopher-batey.co.uk">Christopher Batey</a> / <a href="http://twitter.com/chbatey">@chbatey</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>Cassandra</h2>
+          <ul>
+            <li>
+              Cassandra is an open source distributed database that came out of facebook
+            </li>
+            <li>
+              Data model based on Google's Big Data paper
+            </li>
+            <li>Distributed architecture is based
+              on Dynamo model
+            </li>
+            <li>
+              Applications communicate with Cassandra using a Driver that implements the Cassandra binary protocol
+            </li>
+          </ul>
+
+
+					<aside class="notes">
+						Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
+					</aside>
+				</section>
+
+				<!-- Example of nested vertical slides -->
+				<section>
+
+						<h2>Cassandra Cluster</h2>
+          <ul>
+          <li>
+            Many failures only occur when your cluser is made up of many nodes across many data centers
+          </li>
+          <li>
+            How do you test this in a development environment?
+          </li>
+          </ul>
+
+				</section>
+
+				<section>
+					<h2>Stubbed Cassandra!</h2>
+					<ul>
+            <li>Implements the server side of the Cassandra binary protocol</li>
+            <li>Pretends to be a real Cassandra</li>
+            <li>Can be primed to return rows</li>
+            <li>Can be primed to return errors: Read Request Timeout, Write Request Timeout etc</li>
+					</ul>
+				</section>
+
+
+				<section>
+					<h2>Java Developers - It is on Maven Central</h2>
+					<pre><code data-trim contenteditable>
+<dependency>
+  <groupId>org.scassandra</groupId>
+  <artifactId>java-client</artifactId>
+  <version>0.2.1</version>
+  <scope>test</scope>
+</dependency>
+					</code></pre>
+
+				</section>
+
+				<section>
+					<h2>Don't like Java?</h2>
+					<p>
+						Download a standalone execurable jar from www.scassandra.org
+					</p>
+          <p>
+            It has a REST API to do all your priming
+          </p>
+				</section>
+
+		    <section>
+          <h2>Lets get going - Some code that needs testing</h2>
+<pre><code data-trim contenteditable>
+public List&lt;Person&gt; retrieveNames() {
+    ResultSet result;
+    try {
+        Statement statement = new SimpleStatement(&quot;select * from person&quot;);
+        statement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+        result = session.execute(statement);
+    } catch (ReadTimeoutException e) {
+        throw new UnableToRetrievePeopleException();
+    }
+
+    List&lt;Person&gt; people = new ArrayList&lt;&gt;();
+    for (Row row : result) {
+        people.add(new Person(row.getString(&quot;first_name&quot;), row.getInt(&quot;age&quot;)));
+    }
+    return people;
+}
+</code></pre>
+		    </section>
+
+
+				<section>
+					<h2>Test the query is issued at the correct consistnecy</h2>
+          <pre><code data-trim contenteditable>
+@Test
+public void testQueryIssuedWithCorrectConsistency() {
+    //given
+    underTest.connect();
+    Query expectedQuery = Query.builder().withQuery(&quot;select * from person&quot;)
+        .withConsistency(&quot;QUORUM&quot;).build();
+
+    //when
+    underTest.retrieveNames();
+
+    //then
+    List&lt;Query&gt; queries = activityClient.retrieveQueries();
+    assertTrue(&quot;Expected query with consistency QUORUM, found following queries: &quot; + queries,
+    queries.contains(expectedQuery));
+}
+          </code></pre>
+				</section>
+
+        <section>
+          <h2>Perhaps you prefer testing behaviour?</h2>
+          <pre><code data-trim contenteditable>
+public void testRetrievingOfNames() throws Exception{
+    Map&lt;String, ? extends  Object&gt; row = ImmutableMap.of(
+        &quot;first_name&quot;, &quot;Chris&quot;,
+        &quot;last_name&quot;, &quot;Batey&quot;,
+        &quot;age&quot;, 29);
+    PrimingRequest singleRowPrime = queryBuilder().withQuery(&quot;select * from person&quot;)
+        .withColumnTypes(ImmutableMap.of(&quot;age&quot;, ColumnTypes.Int);)
+        .withRows(row)
+        .build();
+    primingClient.primeQuery(singleRowPrime);
+
+    List&lt;Person&gt; names = underTest.retrieveNames();
+
+    assertEquals(1, names.size());
+    assertEquals(&quot;Chris&quot;, names.get(0).getName());
+}
+          </code></pre>
+        </section>
+
+        <section>
+          <h2>Or how about the REST API</h2>
+          <p>Priming</p>
+          <pre><code data-trim contenteditable>
+{
+  &quot;when&quot;: {
+    &quot;query&quot; :&quot;select * from people&quot;
+  },
+  &quot;then&quot;: {
+    &quot;rows&quot; :[{&quot;name&quot;:&quot;Chris&quot;, &quot;age&quot;:&quot;28&quot;}, {&quot;name&quot;:&quot;Alexandra&quot;, &quot;age&quot;:&quot;24&quot;}]
+  }
+}
+          </code></pre>
+          <p>Activity Verification</p>
+<pre><code data-trim contenteditable>
+[{
+    &quot;query&quot;: &quot;select * from people&quot;,
+    &quot;consistency&quot;: &quot;TWO&quot;
+}]
+</code></pre>
+        </section>
+        <section>
+          <h2>Testing errors</h2>
+<pre><code data-trim contenteditable>
+
+@Test(expected = UnableToRetrievePeopleException.class)
+public void testHandlingOfReadRequestTimeout() throws Exception {
+    // given
+    PrimingRequest primeReadRequestTimeout = queryBuilder()
+        .withQuery(&quot;select * from person&quot;)
+        .withResult(Result.read_request_timeout)
+        .build();
+    primingClient.primeQuery(primeReadRequestTimeout);
+
+    //when
+    underTest.retrieveNames();
+}
+</code></pre>
+        </section>
+        <section>
+          <h2>What else can I do?</h2>
+          <ul>
+            <li>
+              Start as many instances of Scassandra you like in the same JVM
+            </li>
+            <li>
+              Prime all primitive types
+            </li>
+            <li>
+              Prime sets and lists of type text
+            </li>
+            <li>
+              Prime prepared statements
+            </li>
+            <li>
+              Verify number of connections your application makes
+          </ul>
+        </section>
+<section>
+  <section>
+    <h2>So how does all this work?</h2>
+    <ul>
+      <li>
+        Server implemented in Scala
+      </li>
+      <li>
+        Binary port for your Cassandra application to connect to
+      </li>
+      <li>
+        Admin port for the REST API
+      </li>
+      <li>
+        Thin Java wrapper to make it easy to be used in JUnit tests
+      </li>
+    </ul>
+  </section>
+</section>
+
+
+
+				<section>
+					<h2>Thanks!</h2>
+					<ul>
+						<li><a href="https://github.com/scassandra/scassandra-server">Source code on GitHub</a></li>
+						<li><a href="http://twitter.com/chbatey">Follow me on Twitter @chbatey</a></li>
+					</ul>
+				</section>
+
+				<section>
+					<h1>THE END</h1>
+					<h3>BY Christopher Batey / christopher-batey.co.uk</h3>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="{{ "/lib/js/head.min.js" | preprend: site.baseurl}}"></script>
+		<script src="{{ "/js/reveal.min.js" | prepend: site.baseurl }}"></script>
+		<script src="{{ "/lib/js/head.min.js" | prepend: site.baseurl }}"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: '/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: '/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: '/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: '/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
