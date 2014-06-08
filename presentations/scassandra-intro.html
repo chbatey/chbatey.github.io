@@ -70,12 +70,12 @@ layout: presentation
 <section>
   <h2>Java Developers - It is on Maven Central</h2>
 					<pre><code data-trim contenteditable>
-            &lt;dependency&gt;
-            &lt;groupid&gt;org.scassandra&lt;/groupid&gt;
-            &lt;artifactid&gt;java-client&lt;/artifactid&gt;
-            &lt;version&gt;0.2.1&lt;/version&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-            &lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupid&gt;org.scassandra&lt;/groupid&gt;
+    &lt;artifactid&gt;java-client&lt;/artifactid&gt;
+    &lt;version&gt;0.2.1&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
           </code></pre>
 
 </section>
@@ -95,22 +95,22 @@ layout: presentation
 <section>
   <h2>Lets get going - Some code that needs testing</h2>
 <pre><code data-trim contenteditable>
-  public List&lt;Person&gt; retrieveNames() {
-  ResultSet result;
-  try {
-  Statement statement = new SimpleStatement(&quot;select * from person&quot;);
-  statement.setConsistencyLevel(ConsistencyLevel.QUORUM);
-  result = session.execute(statement);
-  } catch (ReadTimeoutException e) {
-  throw new UnableToRetrievePeopleException();
-  }
+public List&lt;Person&gt; retrieveNames() {
+    ResultSet result;
+    try {
+        Statement statement = new SimpleStatement(&quot;select * from person&quot;);
+        statement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+        result = session.execute(statement);
+    } catch (ReadTimeoutException e) {
+        throw new UnableToRetrievePeopleException();
+    }
 
-  List&lt;Person&gt; people = new ArrayList&lt;&gt;();
-  for (Row row : result) {
-  people.add(new Person(row.getString(&quot;first_name&quot;), row.getInt(&quot;age&quot;)));
-  }
-  return people;
-  }
+    List&lt;Person&gt; people = new ArrayList&lt;&gt;();
+    for (Row row : result) {
+        people.add(new Person(row.getString(&quot;first_name&quot;), row.getInt(&quot;age&quot;)));
+    }
+    return people;
+}
 </code></pre>
 </section>
 
@@ -118,43 +118,43 @@ layout: presentation
 <section>
   <h2>Test the query is issued at the correct consistnecy</h2>
           <pre><code data-trim contenteditable>
-            @Test
-            public void testQueryIssuedWithCorrectConsistency() {
-            //given
-            underTest.connect();
-            Query expectedQuery = Query.builder().withQuery(&quot;select * from person&quot;)
-            .withConsistency(&quot;QUORUM&quot;).build();
+@Test
+public void testQueryIssuedWithCorrectConsistency() {
+      //given
+      underTest.connect();
+      Query expectedQuery = Query.builder().withQuery(&quot;select * from person&quot;)
+          .withConsistency(&quot;QUORUM&quot;).build();
 
-            //when
-            underTest.retrieveNames();
+      //when
+      underTest.retrieveNames();
 
-            //then
-            List&lt;Query&gt; queries = activityClient.retrieveQueries();
-            assertTrue(&quot;Expected query with consistency QUORUM, found following queries: &quot; + queries,
-            queries.contains(expectedQuery));
-            }
+      //then
+      List&lt;Query&gt; queries = activityClient.retrieveQueries();
+      assertTrue(&quot;Expected query with consistency QUORUM, found following queries: &quot; + queries,
+      queries.contains(expectedQuery));
+}
           </code></pre>
 </section>
 
 <section>
   <h2>Perhaps you prefer testing behaviour?</h2>
           <pre><code data-trim contenteditable>
-            public void testRetrievingOfNames() throws Exception{
-            Map&lt;String, ? extends Object&gt; row = ImmutableMap.of(
-            &quot;first_name&quot;, &quot;Chris&quot;,
-            &quot;last_name&quot;, &quot;Batey&quot;,
-            &quot;age&quot;, 29);
-            PrimingRequest singleRowPrime = queryBuilder().withQuery(&quot;select * from person&quot;)
-            .withColumnTypes(ImmutableMap.of(&quot;age&quot;, ColumnTypes.Int);)
-            .withRows(row)
-            .build();
-            primingClient.primeQuery(singleRowPrime);
+public void testRetrievingOfNames() throws Exception{
+    Map&lt;String, ? extends Object&gt; row = ImmutableMap.of(
+        &quot;first_name&quot;, &quot;Chris&quot;,
+        &quot;last_name&quot;, &quot;Batey&quot;,
+        &quot;age&quot;, 29);
+    PrimingRequest singleRowPrime = queryBuilder().withQuery(&quot;select * from person&quot;)
+        .withColumnTypes(ImmutableMap.of(&quot;age&quot;, ColumnTypes.Int);)
+        .withRows(row)
+        .build();
+    primingClient.primeQuery(singleRowPrime);
 
-            List&lt;Person&gt; names = underTest.retrieveNames();
+    List&lt;Person&gt; names = underTest.retrieveNames();
 
-            assertEquals(1, names.size());
-            assertEquals(&quot;Chris&quot;, names.get(0).getName());
-            }
+    assertEquals(1, names.size());
+    assertEquals(&quot;Chris&quot;, names.get(0).getName());
+}
           </code></pre>
 </section>
 
@@ -163,39 +163,39 @@ layout: presentation
 
   <p>Priming</p>
           <pre><code data-trim contenteditable>
-            {
-            &quot;when&quot;: {
-            &quot;query&quot; :&quot;select * from people&quot;
-            },
-            &quot;then&quot;: {
-            &quot;rows&quot; :[{&quot;name&quot;:&quot;Chris&quot;, &quot;age&quot;:&quot;28&quot;}, {&quot;name&quot;:&quot;Alexandra&quot;,
-            &quot;age&quot;:&quot;24&quot;}]
-            }
-            }
+{
+    &quot;when&quot;: {
+    &quot;query&quot; :&quot;select * from people&quot;
+},
+    &quot;then&quot;: {
+        &quot;rows&quot; :[{&quot;name&quot;:&quot;Chris&quot;, &quot;age&quot;:&quot;28&quot;}, {&quot;name&quot;:&quot;Alexandra&quot;,
+        &quot;age&quot;:&quot;24&quot;}]
+      }
+}
           </code></pre>
   <p>Activity Verification</p>
 <pre><code data-trim contenteditable>
-  [{
-  &quot;query&quot;: &quot;select * from people&quot;,
-  &quot;consistency&quot;: &quot;TWO&quot;
-  }]
+[{
+    &quot;query&quot;: &quot;select * from people&quot;,
+    &quot;consistency&quot;: &quot;TWO&quot;
+}]
 </code></pre>
 </section>
 <section>
   <h2>Testing errors</h2>
 <pre><code data-trim contenteditable>
-  @Test(expected = UnableToRetrievePeopleException.class)
-  public void testHandlingOfReadRequestTimeout() throws Exception {
-  // given
-  PrimingRequest primeReadRequestTimeout = queryBuilder()
-  .withQuery(&quot;select * from person&quot;)
-  .withResult(Result.read_request_timeout)
-  .build();
-  primingClient.primeQuery(primeReadRequestTimeout);
+@Test(expected = UnableToRetrievePeopleException.class)
+public void testHandlingOfReadRequestTimeout() throws Exception {
+    // given
+    PrimingRequest primeReadRequestTimeout = queryBuilder()
+        .withQuery(&quot;select * from person&quot;)
+        .withResult(Result.read_request_timeout)
+        .build();
+    primingClient.primeQuery(primeReadRequestTimeout);
 
-  //when
-  underTest.retrieveNames();
-  }
+    //when
+    underTest.retrieveNames();
+}
 </code></pre>
 </section>
 <section>
@@ -239,9 +239,9 @@ layout: presentation
 
 
 <section>
-  <h2>Thanks!</h2>
+  <h2>Where to find out more!</h2>
   <ul>
-    <li><a href="https://github.com/scassandra/scassandra-server">Source code on GitHub</a></li>
+    <li><a href="https://github.com/scassandra/scassandra-server">Source code on GitHub: https://github.com/scassandra/scassandra-server</a></li>
     <li><a href="http://twitter.com/chbatey">Follow me on Twitter @chbatey</a></li>
   </ul>
 </section>
