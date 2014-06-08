@@ -21,7 +21,7 @@ layout: presentation
   <h2>Cassandra</h2>
   <ul>
     <li>
-      Cassandra is an open source distributed database that came out of facebook
+      Cassandra is a distributed database that was open-sourced by Facebook
     </li>
     <li>
       Data model based on Google's Big Data paper
@@ -30,7 +30,7 @@ layout: presentation
       on Dynamo model
     </li>
     <li>
-      Applications communicate with Cassandra using a Driver that implements the Cassandra binary protocol
+      Applications communicate with Cassandra using a driver that implements the Cassandra binary protocol
     </li>
   </ul>
 
@@ -47,7 +47,7 @@ layout: presentation
   <h2>Cassandra Cluster</h2>
   <ul>
     <li>
-      Many failures only occur when your cluser is made up of many nodes across many data centers
+      Many failures occur only when your cluser comprises many nodes across different data centers
     </li>
     <li>
       How do you test this in a development environment?
@@ -62,35 +62,10 @@ layout: presentation
     <li>Implements the server side of the Cassandra binary protocol</li>
     <li>Pretends to be a real Cassandra</li>
     <li>Can be primed to return rows</li>
-    <li>Can be primed to return errors: Read Request Timeout, Write Request Timeout etc</li>
+    <li>Can be primed to return errors, e.g. Read Request Timeout, Write Request Timeout</li>
   </ul>
 </section>
 
-
-<section>
-  <h2>Java Developers - It is on Maven Central</h2>
-					<pre><code data-trim contenteditable>
-&lt;dependency&gt;
-    &lt;groupid&gt;org.scassandra&lt;/groupid&gt;
-    &lt;artifactid&gt;java-client&lt;/artifactid&gt;
-    &lt;version&gt;0.2.1&lt;/version&gt;
-    &lt;scope&gt;test&lt;/scope&gt;
-&lt;/dependency&gt;
-          </code></pre>
-
-</section>
-
-<section>
-  <h2>Don't like Java?</h2>
-
-  <p>
-    Download a standalone execurable jar from www.scassandra.org
-  </p>
-
-  <p>
-    It has a REST API to do all your priming
-  </p>
-</section>
 
 <section>
   <h2>Lets get going - Some code that needs testing</h2>
@@ -143,9 +118,9 @@ public void testRetrievingOfNames() throws Exception{
     Map&lt;String, ? extends Object&gt; row = ImmutableMap.of(
         &quot;first_name&quot;, &quot;Chris&quot;,
         &quot;last_name&quot;, &quot;Batey&quot;,
-        &quot;age&quot;, 29);
-    PrimingRequest singleRowPrime = queryBuilder().withQuery(&quot;select * from person&quot;)
-        .withColumnTypes(ImmutableMap.of(&quot;age&quot;, ColumnTypes.Int);)
+        &quot;age&quot;, &quot;29&quot;);
+    PrimingRequest singleRowPrime = queryBuilder()
+         .withQuery(&quot;select * from person&quot;)
         .withRows(row)
         .build();
     primingClient.primeQuery(singleRowPrime);
@@ -235,6 +210,35 @@ public void testHandlingOfReadRequestTimeout() throws Exception {
       </li>
     </ul>
   </section>
+  <section>
+    <h2>Lots more details</h2>
+  </section>
+</section>
+
+
+<section>
+  <h2>Java Developers - It is on Maven Central</h2>
+					<pre><code data-trim contenteditable>
+&lt;dependency&gt;
+    &lt;groupid&gt;org.scassandra&lt;/groupid&gt;
+    &lt;artifactid&gt;java-client&lt;/artifactid&gt;
+    &lt;version&gt;0.2.1&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+          </code></pre>
+
+</section>
+
+<section>
+  <h2>Don't like Java?</h2>
+
+  <p>
+    Download a standalone execurable jar from www.scassandra.org
+  </p>
+
+  <p>
+    It has a REST API to do all your priming
+  </p>
 </section>
 
 
