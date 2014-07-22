@@ -8,7 +8,7 @@ layout: presentation
   <h3>Testing Cassandra the easy way</h3>
 
   <p>
-    <small>Created by <a href="http://christopher-batey.co.uk">Christopher Batey</a> / <a
+    <small><a href="http://christopher-batey.co.uk">Christopher Batey</a> / <a
             href="http://twitter.com/chbatey">@chbatey</a></small>
   </p>
 </section>
@@ -37,10 +37,17 @@ layout: presentation
   </aside>
 </section>
 
-<!-- Example of nested vertical slides -->
+<section>
+  <h2>Single Node</h2>
+</section>
+
+<section>
+  <h2>More realistic</h2>
+</section>
+
 <section>
 
-  <h2>Cassandra Cluster</h2>
+  <h2>Cassandra Failures</h2>
   <ul>
     <li>
       Many failures occur only when your cluser comprises many nodes across different data centers
@@ -49,6 +56,7 @@ layout: presentation
       How do you test this in a development environment?
     </li>
   </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/readtimeout.png" | preprend: site.baseurl}}" />
 
 </section>
 
