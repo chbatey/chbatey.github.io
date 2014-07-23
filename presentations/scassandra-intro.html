@@ -3,15 +3,40 @@ layout: presentation
 ---
 
 <section>
-  <h1>Stubbed Cassandra</h1>
+  <h1>How do I test my Cassandra application?</h1>
 
-  <h3>Testing Cassandra the easy way</h3>
+  <!--<h3>Testing Cassandra the easy way</h3>-->
 
   <p>
     <small><a href="http://christopher-batey.co.uk">Christopher Batey</a> / <a
             href="http://twitter.com/chbatey">@chbatey</a></small>
   </p>
+
+  <aside class="notes">
+Questions for audience:
+     1) Who is using Cassandra?
+     2) Who is actively developing against Cassandra?
+     3) Who has complex policies around retry / consistency?
+  </aside>
 </section>
+
+<section>
+  <h2>Overview</h2>
+  <ul>
+    <li>Cassandra overview</li>
+    <li>Cassandra failure scenarios e.g ReadTimeout, WriteTimeout, Unavailable</li>
+    <li>Existing technologies:</li>
+    <ul>
+      <li>CCM</li>
+      <li>Cassandra Unit</li>
+      <li>Mocking libraries</li>
+      <li>Integration tests</li>
+    </ul>
+    <li>Stubbed Cassandra</li>
+    <li>Conclusion</li>
+  </ul>
+</section>
+
 
 <section>
   <h2>Cassandra</h2>
@@ -32,25 +57,65 @@ layout: presentation
 
 
   <aside class="notes">
-    Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker
-    notes window (hit 's' on your keyboard).
+    Horizontalable scaleable database.
+    Large quantities of data
+    Shines when active dataset does not fit into memory
+    No single point of failure
+  </aside>
+</section>
+
+
+<section>
+  <h2>Single Node</h2>
+  <ul>
+    <li>
+      Single application node, single Cassandra node
+    </li>
+    <li>
+      All the data lives on the same node
+    </li>
+    <li>
+      What could go wrong?
+    </li>
+  </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/onenode.png" | preprend: site.baseurl}}" />
+  <aside class="notes">
+    Only likely to be using Cassandra like this in dev / test environments.
   </aside>
 </section>
 
 <section>
-  <h2>Single Node</h2>
-</section>
-
-<section>
   <h2>More realistic</h2>
-</section>
-
-<section>
-
-  <h2>Cassandra Failures</h2>
   <ul>
     <li>
-      Many failures occur only when your cluser comprises many nodes across different data centers
+      N application nodes, 6 Cassandra nodes
+    </li>
+    <li>
+      Each piece of data is replication 3 times
+    </li>
+    <li>
+      What could go wrong?
+    </li>
+  </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/manynodes.png" | preprend: site.baseurl}}" />
+</section>
+
+
+<section>
+  <h2>Tunable consistency</h2>
+  <ul>
+    <li>Each write/read is done at a consistency</li>
+    <li>ANY, ONE, TWO, THREE, QUORUM, LOCAL_QUORUM, EACH_QUORUM, ALL</li>
+    <li>Any more than ANY and ONE require a cluster of more than one node to make sense</li>
+  </ul>
+</section>
+
+<section>
+
+  <h2>Cassandra Read / Write Timeouts</h2>
+  <ul>
+    <li>
+      Many failures occur only when your cluster comprises many nodes across different data centers
     </li>
     <li>
       How do you test this in a development environment?
@@ -61,6 +126,44 @@ layout: presentation
 </section>
 
 <section>
+  <h2>Cassandra Unavailable</h2>
+  <ul>
+    <li>
+      Many failures occur only when your cluser comprises many nodes across different data centers
+    </li>
+  </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/unavailable.png" | preprend: site.baseurl}}" />
+</section>
+
+<section>
+  <h2>Unit testing / Integration testing</h2>
+
+  <aside class="notes">
+    Usually i call these developer tests.
+  </aside>
+</section>
+
+<section>
+  <h2>Acceptance testing</h2>
+  <ul>
+    <li>
+      Usually done against a real Cassandra cluster
+    </li>
+    <li>
+      Unavailable? Turn off most of the nodes
+    </li>
+    <li>
+      Read/write timeouts? Large amounts of data, small timeouts
+    </li>
+  </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/acceptance.png" | preprend: site.baseurl}}" />
+</section>
+
+<section>
+  <h2>Acceptance testing againt HTTP services?</h2>
+</section>
+
+<section>
   <h2>Stubbed Cassandra!</h2>
   <ul>
     <li>Implements the server side of the Cassandra binary protocol</li>
@@ -68,6 +171,7 @@ layout: presentation
     <li>Can be primed to return rows</li>
     <li>Can be primed to return errors, e.g. Read Request Timeout, Write Request Timeout</li>
   </ul>
+  <img src="{{ "/presentations/scassandra-intro/images/scassandra.png" | preprend: site.baseurl}}" />
 </section>
 
 
@@ -145,7 +249,7 @@ public void testRetrievingOfNames() throws Exception{
 {
     &quot;when&quot;: {
     &quot;query&quot; :&quot;select * from people&quot;
-},
+    },
     &quot;then&quot;: {
         &quot;rows&quot; :[{&quot;name&quot;:&quot;Chris&quot;, &quot;age&quot;:&quot;28&quot;}, {&quot;name&quot;:&quot;Alexandra&quot;,
         &quot;age&quot;:&quot;24&quot;}]
@@ -177,6 +281,11 @@ public void testHandlingOfReadRequestTimeout() throws Exception {
 }
 </code></pre>
 </section>
+
+<section>
+  <h2>Testing retry policies</h2>
+</section>
+
 <section>
   <h2>What else can I do?</h2>
   <ul>
@@ -251,6 +360,17 @@ public void testHandlingOfReadRequestTimeout() throws Exception {
   <ul>
     <li><a href="https://github.com/scassandra/scassandra-server">Source code on GitHub: https://github.com/scassandra/scassandra-server</a></li>
     <li><a href="http://twitter.com/chbatey">Follow me on Twitter @chbatey</a></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Future features</h2>
+</section>
+
+<section>
+  <h2>Conclusion</h2>
+  <ul>
+    <li></li>
   </ul>
 </section>
 
