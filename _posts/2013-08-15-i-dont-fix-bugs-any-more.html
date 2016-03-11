@@ -1,0 +1,15 @@
+---
+layout: post
+title: " I don't fix bugs any more"
+date: '2013-08-15T12:44:00.002-07:00'
+author: Christopher Batey
+tags:
+- craftmanship
+- agile
+- leadership
+modified_time: '2013-08-15T12:44:22.701-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-4423504880912569625
+blogger_orig_url: http://christopher-batey.blogspot.com/2013/08/i-dont-fix-bugs-any-more.html
+---
+
+<div class="p1">One part of being a software engineer that I used to enjoy was the satisfaction of cracking a hard bug. Trawling through logs, using profilers and heap dumps and theorising on different ways different threads could have interleved etc.&nbsp;</div><div class="p2"><br /></div><div class="p1">This week it suddenly dawned on me that I don't have to do this any more!</div><div class="p2"><br /></div><div class="p1">I've spent the last 6+ months working with some great people and we follow a number of great XP practices:</div><ul class="ul1"><li class="li1">All our acceptance tests are automated, &nbsp;many of them before development has started</li><li class="li1">All code is done TDD</li><li class="li1">All production code is paired on</li><li class="li1">We swap pairs every day, so unless a feature is completed in under a day most of our team will see the code</li></ul><div class="p1">In addition we also have a great definition of done; for a particular feature it means:</div><ul class="ul1"><li class="li1">Development complete (implicitly reviewed by the fact it was paired on)</li><li class="li1">All edge cases functionally tested and signed off</li><li class="li1">Deployed to our UAT environment</li></ul><div class="p1">We always go the extra mile for functional testing. If a feature states we should store something persistently we don't only check that it has been but test all the edge cases around the datastore being down, being slow, traffic being dropped by a firewall etc. If is is a multi node cluster datastore (e.g Cassandra) we'll test that we still function when nodes go down etc. And when I say test I don't mean a quick manual test but automated tests running against every commit.</div><div class="p2"><br /></div><div class="p1">This is the first team I've worked in where I haven't had to fight for software to be developed like this. Regardless of how hard it is to create automated tests for a particular scenario - we'll do it.</div><div class="p2"><br /></div><br /><div class="p1">So if you like fixing bugs or being woken up in the middle of the night with production problems - don't develop software like this!</div>

@@ -1,0 +1,12 @@
+---
+layout: post
+title: Bitemporal data in Cassandra
+date: '2015-08-20T09:43:00.002-07:00'
+author: Christopher Batey
+tags: 
+modified_time: '2015-08-20T09:43:57.844-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-991928680279863298
+blogger_orig_url: https://www.blogger.com/comment.g?blogID=4161315644722406995&postID=991928680279863298
+---
+
+I got chatting to someone at NYC Cassandra day about bi-temporal data and didn't get to finish the conversation. I don't pretend to remember the actual use case / specifics but it came down to a time series problem where there are multiple time stamps associated with a stream of events. Cassandra is obviously awesome at time series data with a single timestamp as you use that timestamp as part of your clustering columns and you get sequential ordering on disk, but what about multiple?<br /><br />Scenario A<br /><br />I have an option to buy something from time X to time Y, find all the things I can buy at time Z.<br /><br />

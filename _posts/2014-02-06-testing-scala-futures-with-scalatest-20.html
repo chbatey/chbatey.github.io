@@ -1,0 +1,15 @@
+---
+layout: post
+title: Testing Scala Futures with ScalaTest 2.0
+date: '2014-02-06T14:50:00.000-08:00'
+author: Christopher Batey
+tags:
+- testing
+- scala
+- tdd
+modified_time: '2014-02-06T14:50:00.711-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-2381683418851373935
+blogger_orig_url: http://christopher-batey.blogspot.com/2014/02/testing-scala-futures-with-scalatest-20.html
+---
+
+Recently I was writing integration tests for a library that returned futures. I wanted simple synchronous tests.<br /><br />Fortunately in the latest release of ScalaTest they have added something to do just that: the ScalaFutures trait<br /><br />Say you have a class that returns a Future, e.g:<br /><br /><script src="https://gist.github.com/chbatey/8853877.js"></script> And you want to write a test for this and you want to wait for the future to complete. In regular code you might use a call back or a for comprehension e.g: <br /><br /><script src="https://gist.github.com/chbatey/8853910.js"></script> <br />This won't work in a test as the test will finish before the future completes and the assertions are on a different thread.<br /><br />ScalaFutures to the rescue! Upgrade to ScalaTest 2.0+ and mix in the ScalaFutures trait. Now you can test using whenReady:<br /><br /><script src="https://gist.github.com/chbatey/8853955.js"></script> Or with futureValue: <br /><br /><script src="https://gist.github.com/chbatey/8853965.js"></script> Happy testing! <a href="https://github.com/chbatey/scala-testing" target="_blank">Full source code here</a>.

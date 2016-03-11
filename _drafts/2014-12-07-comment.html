@@ -1,0 +1,12 @@
+---
+layout: post
+title: Comparing Cassandra to the Dynamo paper
+date: '2014-12-07T05:37:00.000-08:00'
+author: Christopher Batey
+tags: 
+modified_time: '2014-12-07T05:37:34.789-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-8957161808570892470
+blogger_orig_url: https://www.blogger.com/comment.g?blogID=4161315644722406995&postID=8957161808570892470
+---
+
+Cassanda's architecture is based on the Amazon Dynamo paper as well as Google's BigTable paper for its data model. But where do Cassandra and Dynamo differ?<br /><h3>Data model</h3>Well this is the obvious one. The Dynamo paper describes a key value store where as Cassandra uses &nbsp;Columnar (wide row) data model. This is less apparent in the later versions of Cassandra where CQL introduces what look like relational tables/rows, however the wide row feature is still supported by having many CQL rows stored together in the same partition.<br /><h3>Partitioning</h3><div>Both Cassandra and Dynamo use consistent hashing to determine which node a given piece of data belongs. This allows any node</div><div><br /></div><div>//todo pic of the rings</div><div><br /></div><div>// dc isolation</div><h3><br /></h3><h3>Hinted handoffs&nbsp;</h3>Both Dynamo and Cassandra aim to be tolerant of nodes being down in the cluster with the notion of self repairing when the nodes comes back up. The mechanism for achieving this is referred to as hinted handoffs for both systems but they differ slightly.<br /><br /><br /><br />// Picture of a Cassandra ring vs a Dynamo ring<br /><h3>Storage engine</h3><br /><h3>Tunable consistency</h3><br /><h3>Conflict resolution&nbsp;</h3><div><br /></div><h3>Load balancing</h3><br /><br />

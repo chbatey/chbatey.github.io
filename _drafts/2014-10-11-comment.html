@@ -1,0 +1,12 @@
+---
+layout: post
+title: Know thy disk
+date: '2014-10-11T14:55:00.000-07:00'
+author: Christopher Batey
+tags: 
+modified_time: '2014-10-11T14:55:29.326-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-3853221978860505685
+blogger_orig_url: https://www.blogger.com/comment.g?blogID=4161315644722406995&postID=3853221978860505685
+---
+
+OSTML0222197:zipkin chbatey$ df -h<br />Filesystem &nbsp; &nbsp; &nbsp;Size &nbsp; Used &nbsp;Avail Capacity &nbsp;iused &nbsp; &nbsp;ifree %iused &nbsp;Mounted on<br />/dev/disk1 &nbsp; &nbsp; 233Gi &nbsp; 70Gi &nbsp;162Gi &nbsp; &nbsp;31% 18480573 42506946 &nbsp; 30% &nbsp; /<br /><br />diskutil info /<br /><br />File System Personality: &nbsp;Journaled HFS+<br />&nbsp; &nbsp;Type (Bundle): &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;hfs<br />&nbsp; &nbsp;Name (User Visible): &nbsp; &nbsp; &nbsp;Mac OS Extended (Journaled)<br />&nbsp; &nbsp;Journal: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Journal size 24576 KB at offset 0x11548000<br />&nbsp; &nbsp;Owners: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Enabled<br /><br />Total Size: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 249.8 GB (249804886016 Bytes) (exactly 487900168 512-Byte-Units)<br />&nbsp; &nbsp;Volume Free Space: &nbsp; &nbsp; &nbsp; &nbsp;174.1 GB (174117769216 Bytes) (exactly 340073768 512-Byte-Units)<br />&nbsp; &nbsp;Device Block Size: &nbsp; &nbsp; &nbsp; &nbsp;512 Bytes<br /><br />stat -f %k .<br />4096

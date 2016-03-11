@@ -1,0 +1,11 @@
+---
+layout: post
+title: 
+date: '2015-09-10T07:32:00.001-07:00'
+author: Christopher Batey
+tags: 
+modified_time: '2015-09-10T07:32:42.445-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-2626093318549060203
+---
+
+        <br /><div class="p1"><span class="s1">CREATE MATERIALIZED VIEW state_yearly_rain AS&nbsp; SELECT country_code FROM raw_weather_data WHERE state_code IS NOT NULL and one_hour_precip IS NOT NULL AND year IS NOT NULL and day IS NOT NULL AND month IS NOT NULL AND hour IS NOT NULL PRIMARY KEY ((state_code, year), one_hour_precip, wsid, day, month, hour);</span></div>

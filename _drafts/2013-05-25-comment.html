@@ -1,0 +1,15 @@
+---
+layout: post
+title: Retrieving large amounts of timeseries data from Cassandra using the Datastax
+  Java driver  (more than can fit in memory)
+date: '2013-05-25T07:43:00.000-07:00'
+author: Christopher Batey
+tags:
+- bigdata
+- cassandra
+modified_time: '2013-05-25T07:43:26.682-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-9045529435181366945
+blogger_orig_url: https://www.blogger.com/comment.g?blogID=4161315644722406995&postID=9045529435181366945
+---
+
+A recent problem I've come across is running a query against cassandra that will return more data than will fit in memory. Either the Cassandra node's memory or the application's memory.<br /><br />To get around this I split the query into many smaller queries and created a JDBC like result set interface for the rest of my application. This was possible as the queries I needed were time series based.<br /><br />If you're very patient server side cursors are on the roadmap for <a href="https://issues.apache.org/jira/browse/CASSANDRA-4415">cassandra 2.0</a>.<br /><br />However if you can't wait that long then here is a simple example of how to get cursor like functionality in a client.<br /><br /><br />We only have two records in the table. If you had millions then selecting the posts for an day or even an hour may return too much data. This is where you can separate it out into multiple queries, say one for each minute of the day. This sounds obviously simple, the only complicated part is how to do the&nbsp;queries&nbsp;at the correct rate without letting the complexity leave the<br /><br /><br /><br /><br />

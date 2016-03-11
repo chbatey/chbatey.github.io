@@ -1,0 +1,15 @@
+---
+layout: post
+title: 'The modern developer: Understanding TCP'
+date: '2014-06-15T07:23:00.000-07:00'
+author: Christopher Batey
+tags:
+- moderndeveloper
+- tcp
+- java
+modified_time: '2014-06-16T15:26:44.196-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-6765754660403989523
+blogger_orig_url: http://christopher-batey.blogspot.com/2014/06/the-moder-developer-understanding-tcp.html
+---
+
+A couple of years ago I am not sure when interviewing candidates that I would have delved into their knowledge of the TCP protocol.<br /><br />However I think I've changed my mind, <b>why?</b><br /><br />Reason one:<b> The Cloud</b>. The marketer tells us that the cloud means that we don't need to care where our servers are or where our applications are deployed. But for the developer I think the opposite is true. Suddenly rather than internal high speed network links our applications are being deployed onto commodity hardware with shoddy network links that regularly go down.<br /><br />Reason two: <b>Micro-service architecture</b>. As we split up our applications into small components we're also adding to the number of integration points, most of those integration points will be over TCP. <br />So what should a well rounded developer know about their system and its dependencies: <br /><ol><li>For any calls outside of their application's process:</li><ol><li>What is the underlying protocol?</li><li>What is the connection timeout for that protocol?</li><li>What is the read timeout for that protocol?</li><li>What is the write timeout for that protocol?</li></ol><li>Are there any firewalls between your application and its dependencies?</li><li>Does the traffic sent between your applications, or your application and its dependencies go over the Internet?</li><li>What happens if a dependency responds slower than usual at the application level?</li><li>What happens if a dependency responds slower, or not at all, at the protocol level?</li></ol><div>And I think the best way to know the answer to these question is to test these scenarios. And to do that they need a good understanding of how TCP works and when it can go wrong. They need to be able to use tools like tcpdump, wireshark and netcat. How many "Java developers" do you think fall into this category and would test these scenarios?&nbsp;</div><div><br /></div><div>How many would say: Well I call a Java method that does the connection, what do I care?</div><div><br /></div><div>As soon as you remember that the people writing these libraries are just as human as you, you might have second thoughts about not testing the "too edge-case". Most people are surprised to realise that a lot of libraries just use the operating system's timeout value for TCP connections, which is usually measured in minutes, not seconds. How do you explain to your users why your application hung for 10 minutes?</div><div><br /></div><div>I no longer see any of the above scenarios as edge cases, it just might take a few weeks in production for each of them to happen.</div>

@@ -1,0 +1,16 @@
+---
+layout: post
+title: 'Akka: Testing messages sent to child actors'
+date: '2014-02-05T14:55:00.001-08:00'
+author: Christopher Batey
+tags:
+- testing
+- akka
+- scala
+- tdd
+modified_time: '2014-02-10T19:05:01.563-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-8666001324289491573
+blogger_orig_url: http://christopher-batey.blogspot.com/2014/02/akka-testing-messages-sent-to-child.html
+---
+
+I previously blogged about <a href="http://christopher-batey.blogspot.ca/2014/01/akka-testing-that-actor-sends-message.html" target="_blank">testing messages sent back to the sender</a>. Another common scenario is testing that an actor sends the correct message to a child. A piece of code that does this might look like:<br /><br /><script src="https://gist.github.com/chbatey/8834575.js"></script> But how do you test drive this kind of code? <br /><br /><script src="https://gist.github.com/chbatey/8834631.js"></script> I've adopted the approach of removing the responsibility of creating the child from the ParentActor. To do this you can pass in a factory to the ParentActor's constructor that can be replaced for testing. To do this the ParentActor is changed to look like this:<br /><br /><script src="https://gist.github.com/chbatey/8834715.js"></script> The ParentActor now takes in a factory function which takes in an ActorFactoryRef and returns a ActorRef. This function is responsible for creating the ChildActor.  <br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">childFactory: (ActorRefFactory) =&gt; ActorRef</span><br /><br />This is then used by the ParentActor as follows:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">val childActor = childFactory(context)</span><br /><br />You can now inject a TestProbe for testing rather than using a real ActorFactorRef. For example:<br /><br /><script src="https://gist.github.com/chbatey/8834924.js"></script>And for the real code you can pass in an anonymous function that uses the ActorRefFactory to actually create a real ChildActor: <br /><br /><script src="https://gist.github.com/chbatey/8834998.js"></script> Here you can see the ActorFactoryRef (context in Actors implement this interface) is used to create an Actor the same way as the original ParentActor did.<br /><br /><a href="https://github.com/chbatey/akka-testing" target="_blank">Full source code here</a>.

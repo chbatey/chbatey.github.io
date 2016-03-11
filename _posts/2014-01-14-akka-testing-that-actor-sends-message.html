@@ -1,0 +1,16 @@
+---
+layout: post
+title: 'Akka: Testing that an actor sends a message back to the sender'
+date: '2014-01-14T15:39:00.000-08:00'
+author: Christopher Batey
+tags:
+- testing
+- akka
+- scala
+- tdd
+modified_time: '2014-02-10T19:05:17.507-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-3098334454282967299
+blogger_orig_url: http://christopher-batey.blogspot.com/2014/01/akka-testing-that-actor-sends-message.html
+---
+
+A common pattern when using actors is for actor A to send a message to Actor B and then for Actor B to send a message back.<br /><br />This can be tested using the Akka testkit along with Scala Test.<br /><br />Take the following very simple example. We have an Actor called Server which should accept Startup messages and respond with a Ready message when it is ready for clients to send additional messages.<br /><br />We can start with a noddy implementation that does nothing: <br /><br /><script src="https://gist.github.com/chbatey/8427997.js"></script> Then write a test to specify the behaviour. Here I've used TestKit along with Scala Test FunSuite. <br /><br /><script src="https://gist.github.com/chbatey/8428026.js"></script> This test will fail with the following error message: <br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">assertion failed: timeout (3 seconds) during expectMsg while waiting for Ready</span><br /><br />As you can probably guess TestKit waited for 3 seconds for a Ready message to be sent back.<br /><br />To fix the test we add the the following to the Server Actor implementation:<br /><br /><script src="https://gist.github.com/chbatey/8428088.js"></script> And now the test will pass!  The two important things to take note of are that our test case extended from TestKit, this gives you an ActorSystem. And that the test case mixed in the ImplicitSender trait, this allows us to receive messages use the methods like "expectMsg" to assert that the correct message has been received. 

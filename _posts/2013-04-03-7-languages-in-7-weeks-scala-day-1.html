@@ -1,0 +1,14 @@
+---
+layout: post
+title: '7 languages in 7 weeks: Scala day 1'
+date: '2013-04-03T12:39:00.000-07:00'
+author: Christopher Batey
+tags:
+- 7languages
+- scala
+modified_time: '2013-05-25T07:42:20.560-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-276835742064043377
+blogger_orig_url: http://christopher-batey.blogspot.com/2013/04/7-languages-in-7-weeks-scala-day-1.html
+---
+
+I went to a great talk by Sandro Mancuso at Devoxx UK last week. He mentioned the project he is currently working on being written in Java for the main business flow and Scala for the data manipulation (sorry if I have remembered that incorrectly). This got me thinking it was about time I learnt some Scala. I've dipped in and out of the 7 languages in 7 weeks book; fortunately it has a chapter on Scala. So here I go...<br /><br />&nbsp;Googling around and reading the first day the following stands out:<br /><br /><ul><li>Type inference with the safety of static typing (we're all sick of typing types aren't we??)</li><li>Companion objects instead of static methods</li><li>Higher order functions (why do we need lambas? Can't we just switch to Scala?)</li><li>Interfaces, no I mean mixins, wait traits: interfaces with implementation? I think these are great when used well.</li><li>Tuples and ranges.</li></ul>So on to my home work!<br /><br />The exercise for day 1 is to write noughts and crosses. I decided to concentrate on setting up a nice environment for writing scala rather than great code. I started with vim, then sublime but decided I fancied using an IDE. I started with Eclipse but moved to IntelliJ as it looks nicer on a retina screen :) In &nbsp;addition to setting up an IDE I wanted to do TDD from the start, so I got to grips with ScalaTest.<br /><br />Here are a couple of example tests:<br /><br /><script src="https://gist.github.com/chbatey/5302877.js"></script> <br />Here is the main Board object. I could pull out the logic to determine a winner into a class like Game but as this was my first Scala code I decided to keep it simple in a single file. <br /><br /><script src="https://gist.github.com/chbatey/96f5692a877b91560228.js"></script> <br />I've omitted the code that calculates the different types thought it's all available on github. I looked at using a case class rather than a class that extends Enumeration but I haven't been taught case classes yet &nbsp;so I'll leave that until later.<br /><br />That's it for day one!

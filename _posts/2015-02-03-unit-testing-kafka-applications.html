@@ -1,0 +1,15 @@
+---
+layout: post
+title: Unit testing Kafka applications
+date: '2015-02-03T01:55:00.002-08:00'
+author: Christopher Batey
+tags:
+- kafka
+- tdd
+- wiremock
+modified_time: '2015-02-03T07:44:40.082-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-3383602567523286708
+blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/unit-testing-kafka-applications.html
+---
+
+I recently started working with Kafka. The first thing I do when start with a tech is work out how I am going to write tests as I am a TDD/XP nut.<br /><br />For HTTP I use <a href="http://wiremock.org/" target="_blank">Wiremock</a>, for Cassandra I wrote a test double called&nbsp;<a href="http://scassandra.org/" target="_blank">Stubbed Cassandra.</a>&nbsp;The term test double comes from the awesome book <a href="http://www.amazon.co.uk/Release-It-Production-Ready-Pragmatic-Programmers/dp/0978739213" target="_blank">Release It!</a>&nbsp;where it recommends for each technology you integrate with having a test double that you can prime to fail in every way possible.<br /><br />I couldn't find anything for Kafka but I did find a couple of<a href="http://pannoniancoder.blogspot.co.uk/2014/08/embedded-kafka-and-zookeeper-for-unit.html" target="_blank"> blogs and gists</a> for people running Kafka/Zookeeper in the same JVM as tests.<br /><br />That's a start, I took it one step further and wrote a version that will hide away all the details, including a JUnit rule so you don't even need to start/stop it for tests as well as convenient methods to send and receive messages. Here's an example of an integration test for the KafkaUnit class:<br /><br /><script src="https://gist.github.com/chbatey/ab8a0bb4ee3eb8345c3f.js"></script> <br />Let's say you have some code that sends a message to Kafka, like this:<br /><br /><script src="https://gist.github.com/chbatey/09e4b2837feaffd5c6eb.js"></script>  A unit test would look something like this:<br /><br /><script src="https://gist.github.com/chbatey/d8c0ac2fc49d399cd16f.js"></script> It is in Maven Central, so if you want to use it just add the following dependency:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&lt;dependency&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &lt;groupId&gt;info.batey.kafka&lt;/groupId&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &lt;artifactId&gt;kafka-unit&lt;/artifactId&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &lt;version&gt;0.1.1&lt;/version&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&lt;/dependency&gt;</span><br /><br />If you want to contribute check it out on <a href="https://github.com/chbatey/kafka-unit" target="_blank">github</a>.<br /><br />It is pretty limited so far, assumed String messages etc. If I keep working with Kafka I'll extend it and add support for injecting faults etc. Also for the next version I'll come up with a versioning mechanism that includes the Kafka version.

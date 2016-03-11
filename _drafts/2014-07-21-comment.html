@@ -1,0 +1,12 @@
+---
+layout: post
+title: 'Using Spark with Cassandra: Using data you once thought lost'
+date: '2014-07-21T00:03:00.002-07:00'
+author: Christopher Batey
+tags: 
+modified_time: '2014-07-21T00:03:24.959-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-8316894439462447663
+blogger_orig_url: https://www.blogger.com/comment.g?blogID=4161315644722406995&postID=8316894439462447663
+---
+
+Cassandra is a great operational database. With Spark it can also become a great source of your analysis.<br /><br />Imagine the use case where you have stored some blob of data in Cassandra. You needed to be able to retrieve it in exactly the same format so you keep it in its the original format in a text column. Lets say that the original format is JSON.<br /><br />You can retrieve this JSON by a limited set of fields you pulled out and either made part of your primary key, secondary indexes or put in a separate index table.<br /><br />This is all working perfectly until a requirement lands on your desk that means you need to retrieve by different fields or you need to do some analysis on all the data.<br /><br /><br />

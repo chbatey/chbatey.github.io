@@ -1,0 +1,19 @@
+---
+layout: post
+title: Testing your RESTful services with Groovy, Spock and HTTPBuilder
+date: '2014-02-13T18:44:00.000-08:00'
+author: Christopher Batey
+tags:
+- testing
+- groovy
+- springboot
+- spock
+- spring
+- tdd
+- java
+modified_time: '2014-02-13T18:44:13.781-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-6316132383278950965
+blogger_orig_url: http://christopher-batey.blogspot.com/2014/02/testing-your-restful-services-with.html
+---
+
+I like to test the HTTP portion of the RESTful web services I build in isolation. This is because, in the languages I use (Java, Scala), most of the code responsible for taking in HTTP requests and parsing them is very framework specific and simply delegates the actual logic to another part of my application. Ideally I can launch this part of my application in the same way as it is launched in production but with the rest of the application stubbed out.<br /><br />Recently I've been using Groovy/Spock for these integration tests, here's how for a really simple web service. In this example it's been built with Spring Boot.<br /><br /><script src="https://gist.github.com/chbatey/8984404.js"></script> Let's not go into the details of how Spring boot work but it is essentially the same application as in <a href="https://spring.io/guides/gs/rest-service/">Spring's guide</a>. <br /><br />The web application has a single path: /exampleendpoint which takes in a single query param: input and returns a JSON object with a single field payload with the value: Something really important: with the input appended.  <br /><br />I want to test that the web service takes in HTTP, takes the query parameter out and builds the JSON correctly. With Groovy/Spock/HTTPBuilder here's how it looks:<br /><br /><script src="https://gist.github.com/chbatey/8994751.js"></script> Let's look at what is going on here:<br /><ul><li>In the setup phase we create a RESTClient</li><li>In the exercising phase we make a call out to the web application.</li><li>In the verification phase we check that the response code is 200, the content type is "application/json" and the body is JSON with a single payload field that contains "Something really important: Get a hair cut"</li></ul>Benefits over writing this in Groovy/Spock over say just using Java/JUnit: <br /><div><ul><li>The HTTP libraries are easier to use with less code</li><li>The assertions are more expressive</li><li>More magic, for instance the second with() block works on a Groovy map that has automagically created</li></ul><div>The above example doesn't deal with how to start and stop the web service under test, I left that out as it is very web framework specific.&nbsp;</div></div><div><br /></div><div>What do you need in your build to get this setup? I used Gradle for this example so it is probably easier to just check out the <a href="https://github.com/chbatey/spock-web-testing/blob/master/build.gradle">build.gradle</a>, a lot of it can be ignored as it is related to Spring Boot rather than Spock. Here are the important bits:<br /><br />The plugins:</div><br /><script src="https://gist.github.com/chbatey/8994843.js"></script> And the dependencies: <br /><br /><script src="https://gist.github.com/chbatey/8994863.js"></script> <div>The entire project is <a href="https://github.com/chbatey/spock-web-testing" target="_blank">here</a>. Happy testing.</div>

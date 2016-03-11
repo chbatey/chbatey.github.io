@@ -1,0 +1,16 @@
+---
+layout: post
+title: 'Spark 1.2 with Cassandra 2.1: Setting up a SparkSQL + Cassandra environment'
+date: '2015-01-21T08:27:00.002-08:00'
+author: Christopher Batey
+tags:
+- spark
+- cassandra
+- ansible
+- vagrant
+modified_time: '2015-01-21T08:34:31.063-08:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-7477826288835406329
+blogger_orig_url: http://christopher-batey.blogspot.com/2015/01/spark-12-with-cassandra-21-setting-up.html
+---
+
+In my <a href="http://christopher-batey.blogspot.co.uk/2014/12/getting-started-cassandra-spark-with.html" target="_blank">previous post on Cassandra and Spark</a> I showed how to get a development environment setup with Vagrant/Ansible/VirtualBox without installing Cassandra/Spark on your dev station.<br /><br />This update will get us to a point where we can run SQL (yes, SQL, not CQL) on Cassandra. It is just a trivial example to show the setup working.<br /><br />The previous article was back in the days of Spark 1.0. With Spark 1.1+ we can now run SparkSQL directly against Cassandra.<br /><br />I've updated the <a href="https://github.com/chbatey/vagrant-cassandra-spark" target="_blank">Vagrant/Ansible provisioning</a> to install Spark 1.2 and Cassandra 2.1, and I've added a new "fatjar" with the latest Cassandra Spark connector so that we can use it in the Spark shell and show this magic working. The 1.2 connector isn't released yet so I have built against the Alpha, see <a href="https://github.com/datastax/spark-cassandra-connector" target="_blank">here for details</a>. We're just that cutting edge here...<br /><br />So, once you have ran vagrant up (this will take a while as it downloads&nbsp;+ install all of the above) you'll need to SSH in we can get into Spark shell.<br /><br />I've setup the following alias so no worrying about classpaths:<br /><br /><b>alias spark-shell='spark-shell --jars /vagrant/spark-connector-1.2.0-alpha1-driver-2.1.4-1.0.0-SNAPSHOT-fat.jar</b><br /><br />First lets jump into cqlsh and create a keyspace and table to play with:<br /><br /><script src="https://gist.github.com/chbatey/a58d40b801e587a053c2.js"></script> <br />Not the most exciting schema you'll ever see, but this is all about getting the Hello World of SparkSQL on Cassandra working!<br /><br />Now we have some data to play with lets access it from Spark shell.<br /><br /><script src="https://gist.github.com/chbatey/be40894a5f8a6fed582d.js"></script> <br />Lets go through what has happened here:<br /><br /><ul><li>Lines 3-6: Mandatory Spark ASCII art</li><li>Line 12: Import the connector so we can access Cassandra</li><li>Line 15: Create a CassandraSQLContext</li><li>Line 18: Set it to our test Keyspace we created above</li><li>Line 20: Select the whole table (very exciting I know!)</li><li>Line 21: Get Spark to execute an action so all the magic happens</li></ul><br />That's all for now, tune in later for a more complicated example :)<br /><br />Here's the link to all the Vagrant/Ansible&nbsp;<a href="https://github.com/chbatey/vagrant-cassandra-spark" target="_blank">code</a>.<br /><br /><br /><br />

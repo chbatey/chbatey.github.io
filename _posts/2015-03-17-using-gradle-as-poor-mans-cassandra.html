@@ -1,0 +1,15 @@
+---
+layout: post
+title: Using Gradle as a poor man's Cassandra schema management tool
+date: '2015-03-17T09:38:00.003-07:00'
+author: Christopher Batey
+tags:
+- gradle
+- hacks
+- cassandra
+modified_time: '2015-03-17T09:38:43.445-07:00'
+blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-5910748509878653935
+blogger_orig_url: http://christopher-batey.blogspot.com/2015/03/using-gradle-as-poor-mans-cassandra.html
+---
+
+I work across a desktop and two laptops so reproducible builds mean a lot to me! I often slate Gradle for being buggy and not doing the simple things well (e.g. dependency management for local development).<br /><br />However it is awesome when you want a quick bit of build logic. I wanted to build my schema for a Cassandra application I am working on to keep my various machines up to date.<br /><br />So easy in an extensible system like Gradle. I already had my schema creation commands in src/main/resources/schema/tables.cql<br /><br />I then added a built script dependency to my build.gradle:<br /><br /><script src="https://gist.github.com/chbatey/ce468dc108091e0e056b.js"></script><br />Then added a few imports and a couple of nifty tasks:<br /><br /><script src="https://gist.github.com/chbatey/f3fcfb7bbd928c1ece11.js"></script><br />Of course this relies on one CQL command per line and isn't exactly liquabase but not bad for 10 minutes hacking.<br /><br />Lots of these hacks can lead to very ugly build scripts so be careful :)
