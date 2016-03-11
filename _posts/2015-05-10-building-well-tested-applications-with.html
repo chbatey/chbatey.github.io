@@ -15,4 +15,152 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-77922462483675214
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/05/building-well-tested-applications-with.html
 ---
 
-I am a huge test first advocate. Since seeing Martin Thompson speak I am now trying to include performance testing with the same approach. I am going to call this approach Performance, Acceptance and Unit Test Driven Development, or PAUTDD :)<br /><br />Tools/frameworks/library come and go so I'll start with the theory then show how I set this up using Junit and Mockio for unit testing, Cucumber for acceptance tests and Gatling for performance tests. Well I won't show JUnit and Mockito because that is boring!<br /><br />So here's how I develop a feature:<br /><ol><li>Write a high level end to end acceptance test. There will be times where I'll want acceptance tests not to be end to end, like if there was an embedded rules engine.</li><li>Write a basic performance test.</li><li>TDD with unit testing framework until the above two pass.</li><li>Consider scenario based performance test.</li></ol><div>I hate to work without test first at the acceptance level, even for a small feature (half a day dev?) I find them invaluable for keeping me on track and letting me know when functionally I am done. Especially if I end up doing a bit too much Unit testing/Mocking (bad Chris!) as when head down in code it is easy to forget the big picture: what functionality are you developing for a user.&nbsp;</div><div><br /></div><div>Next is a newer part of my development process. Here I want a performance test for the new feature, this may not be applicable but it usually is. Which ever framework I am using here I want to be able to run it locally and as part of my continuous integration for trend analysis. However I want more for my effort than that, I really want to be able to use the same code for running against various environments running different hardware.<br /><br />I hate performance tests that aren't in source control and versioned. Tools that use a GUI are no use to me, I constantly found while working at my last company that the "performance testers" would constantly change their scripts and this would change the trend way more than any application changes. I want to be able to track both.</div><div><br /></div><h3>So how to set all this up for a Spring Boot application using Cucumber and Gatling?</h3><div><br />This post is on build setup, not the actual writing of the tests. My aim is to enable easy acceptance/performance testing.</div><div><br /></div><div>Here's the layout of my latest project:</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-o285xH-Qlow/VOto6zOFeqI/AAAAAAAAAYo/K68BQZCq0UQ/s1600/Screenshot%2B2015-02-23%2B17.52.17.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="200" src="http://3.bp.blogspot.com/-o285xH-Qlow/VOto6zOFeqI/AAAAAAAAAYo/K68BQZCq0UQ/s1600/Screenshot%2B2015-02-23%2B17.52.17.png" width="189" /></a></div><div class="separator" style="clear: both; text-align: center;"><br /></div><div class="separator" style="clear: both; text-align: left;">Main is the source, test is the unit tests and e2e is both the Cucumber and the Gatling tests. I could have had separate source sets for the Cucumber and Gatling tests but that would have confused IntelliJ's Gradle support too much (and they are nicely split by Cucumber being Java and Gatling being Scala).</div><div class="separator" style="clear: both; text-align: left;"><br /></div><h4 style="clear: both; text-align: left;">Cucumber JVM</h4><div class="separator" style="clear: both; text-align: left;"><br /></div><div class="separator" style="clear: both; text-align: left;">There are various articles on Cucumber-JVM, here's the steps I used to get this running nicely in the IDE and via Gradle.</div><div class="separator" style="clear: both; text-align: left;"><br /></div><div class="separator" style="clear: both; text-align: left;">First the new source set:</div><div class="separator" style="clear: both; text-align: left;"><br /></div><div class="separator" style="clear: both; text-align: left;"><script src="https://gist.github.com/chbatey/6da41beb0d620618d180.js"></script></div><div class="separator" style="clear: both; text-align: left;">Nothing exciting here, we are using the same classapth as test, we could have had a separate one.</div><div class="separator" style="clear: both; text-align: left;"><br /></div><div class="separator" style="clear: both; text-align: left;">Next is dependencies, this is actually the Gatling and HTTP client (for hitting our application) as well.</div><div class="separator" style="clear: both; text-align: left;"><br /></div><div class="separator" style="clear: both; text-align: left;"><script src="https://gist.github.com/chbatey/69fd3687103d0fc36811.js"></script></div><div>We cucumber JUnit and Spring dependencies.<br /><br />Next is the source code for the acceptance tests. The Features are in the resource folder and the source is in the Java folder. To allow running via Gradle you also create a JUnit test to run all the features. Intellij should work find without this by just running the feature files.<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-_nq7RQW00gQ/VOtuZwUWFBI/AAAAAAAAAY4/Fyo-A5DWM5g/s1600/Screenshot%2B2015-02-23%2B18.14.28.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="274" src="http://4.bp.blogspot.com/-_nq7RQW00gQ/VOtuZwUWFBI/AAAAAAAAAY4/Fyo-A5DWM5g/s1600/Screenshot%2B2015-02-23%2B18.14.28.png" width="320" /></a></div><br /><br />Here I have Features separated by type, here's an example Feature:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-tl1sxHMFDsk/VOtuoX7zIQI/AAAAAAAAAZA/1JFncnGZ_eY/s1600/Screenshot%2B2015-02-23%2B18.16.56.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="62" src="http://4.bp.blogspot.com/-tl1sxHMFDsk/VOtuoX7zIQI/AAAAAAAAAZA/1JFncnGZ_eY/s1600/Screenshot%2B2015-02-23%2B18.16.56.png" width="400" /></a></div><br /></div><div>I like to keep the language at a high level so a non-techy can write these. The JUnit test RunEndToEndTests looks like this:<br /><br /><script src="https://gist.github.com/chbatey/5027dca5c71034353a8a.js"></script><br />This is what Gradle will pick up when we run this from the command line. You could separate this out into multiple tests if you wanted.<br /><br />For running inside IntelliJ you might need to edit the run configuration to include a different Glue as by default it will be the same as the package your Feature file is in, for this project this wouldn't pick up the GlobalSteps as it is outside of the security/users folder. This is what my configuration looks like, I set this as the default:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-NEGfd6sGolc/VOtvsHMcodI/AAAAAAAAAZM/hP_Ti0fDwYI/s1600/Screenshot%2B2015-02-23%2B18.21.18.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="71" src="http://3.bp.blogspot.com/-NEGfd6sGolc/VOtvsHMcodI/AAAAAAAAAZM/hP_Ti0fDwYI/s1600/Screenshot%2B2015-02-23%2B18.21.18.png" width="400" /></a></div><br />Now our features will run if you want to see what the implementation of the Steps look like, checkout the whole project from Github.<br /><br /><h4>Gatling</h4></div><div><br />This is my first project using Gatling, I wanted my scenarios in code that I could have in version control. Previously I've used JMeter. Where as you can checkin the XML it really isn't nice to look at in diff tools. I've also been forced *weep* to use more GUI based tools like SOASTA and HP Load runner. One thing I haven't looked at is Gatling's support for running many agents. For me to continue using Gatling beyond developer trend analysis this needs to be well supported.</div><div><br /></div><div>We already have the dependencies, see the dependencies section above, and we're going to use the same source set. The only difference is we're going to be writing these tests in Scala.</div><div><br /></div><div>My first requirement was not to have to have Gatling installed manually on developer and CI boxes. Here's how to do this in Gradle:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/fc3fb0d15a3b9d925ccc.js"></script></div><div>Where BasicSimulation is the fully qualified name of my Gatling load test. All we do here is define a JavaExec task with the Gatling main class, tell Gatling where our source is and which simulation to run.<br /><br />To tie all this together so it runs every time we fun Gradle check we add the following at the bottom of our Gradle build file:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-BHTJ3LX00R0/VOtxmlfhxHI/AAAAAAAAAZY/5DGXQBN_cIs/s1600/Screenshot%2B2015-02-23%2B18.29.29.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="41" src="http://4.bp.blogspot.com/-BHTJ3LX00R0/VOtxmlfhxHI/AAAAAAAAAZY/5DGXQBN_cIs/s1600/Screenshot%2B2015-02-23%2B18.29.29.png" width="200" /></a></div><br /></div><div>This will produce reports that can be published&nbsp;+ consumed by the Jenkins Gatling plugin.<br /><br />To run the same load test from Intellij we do exactly the same in a run configuration:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-tHM5CWGxWr8/VOtyJRcOJ3I/AAAAAAAAAZg/jrasUENEaTQ/s1600/Screenshot%2B2015-02-23%2B18.31.45.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="104" src="http://1.bp.blogspot.com/-tHM5CWGxWr8/VOtyJRcOJ3I/AAAAAAAAAZg/jrasUENEaTQ/s1600/Screenshot%2B2015-02-23%2B18.31.45.png" width="320" /></a></div><br /></div><div><br /></div><div>A basic Gatling tests looks like this:<br /><br /><script src="https://gist.github.com/chbatey/9c5ee580cbae648dd30f.js"></script><br />This test will run a very simple test where a single virtual user hits the /api/auction URL 100 times with a pause of 10 milliseconds. The top couple of lines start the Spring boot application and register a shut down hook to stop it.<br /><br />We'll then end up with a report that looks like this:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-Nn4AYeaUGkA/VOty3il3eCI/AAAAAAAAAZo/5H2s4ujHJ_8/s1600/Screenshot%2B2015-02-23%2B18.34.48.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="251" src="http://2.bp.blogspot.com/-Nn4AYeaUGkA/VOty3il3eCI/AAAAAAAAAZo/5H2s4ujHJ_8/s1600/Screenshot%2B2015-02-23%2B18.34.48.png" width="400" /></a></div><br /></div><div>This is a pretty terrible load test as it runs for 2 seconds and has a single user. But the point of this post is to setup everything so when adding new functionality it is trivial to add new performance and acceptance tests.<br /><br />That's it, happy testing! If you want to see the whole project is on <a href="https://github.com/chbatey/killrauction">Github</a>. It us under active development so you'll know how I got on with Gatling based if it is still there and there are lots of tests that use it!</div>
+I am a huge test first advocate. Since seeing Martin Thompson speak I am now trying to include performance testing with the same approach. I am going to call this approach Performance, Acceptance and Unit Test Driven Development, or PAUTDD :)
+<br/>
+<br/>Tools/frameworks/library come and go so I'll start with the theory then show how I set this up using Junit and Mockio for unit testing, Cucumber for acceptance tests and Gatling for performance tests. Well I won't show JUnit and Mockito because that is boring!
+<br/><br/>So here's how I develop a feature:<br/>
+<ol>
+    <li>Write a high level end to end acceptance test. There will be times where I'll want acceptance tests not to be
+        end to end, like if there was an embedded rules engine.
+    </li>
+    <li>Write a basic performance test.</li>
+    <li>TDD with unit testing framework until the above two pass.</li>
+    <li>Consider scenario based performance test.</li>
+</ol>
+<div>I hate to work without test first at the acceptance level, even for a small feature (half a day dev?) I find them
+    invaluable for keeping me on track and letting me know when functionally I am done. Especially if I end up doing a
+    bit too much Unit testing/Mocking (bad Chris!) as when head down in code it is easy to forget the big picture: what
+    functionality are you developing for a user.&nbsp;</div>
+<div><br/></div>
+<div>Next is a newer part of my development process. Here I want a performance test for the new feature, this may not be
+    applicable but it usually is. Which ever framework I am using here I want to be able to run it locally and as part
+    of my continuous integration for trend analysis. However I want more for my effort than that, I really want to be
+    able to use the same code for running against various environments running different hardware.<br/><br/>I hate
+    performance tests that aren't in source control and versioned. Tools that use a GUI are no use to me, I constantly
+    found while working at my last company that the "performance testers" would constantly change their scripts and this
+    would change the trend way more than any application changes. I want to be able to track both.
+</div>
+<div><br/></div><h3>So how to set all this up for a Spring Boot application using Cucumber and Gatling?</h3>
+<div><br/>This post is on build setup, not the actual writing of the tests. My aim is to enable easy
+    acceptance/performance testing.
+</div>
+<div><br/></div>
+<div>Here's the layout of my latest project:</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://3.bp.blogspot.com/-o285xH-Qlow/VOto6zOFeqI/AAAAAAAAAYo/K68BQZCq0UQ/s1600/Screenshot%2B2015-02-23%2B17.52.17.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="200"
+                                                                          src="http://3.bp.blogspot.com/-o285xH-Qlow/VOto6zOFeqI/AAAAAAAAAYo/K68BQZCq0UQ/s1600/Screenshot%2B2015-02-23%2B17.52.17.png"
+                                                                          width="189"/></a></div>
+<div class="separator" style="clear: both; text-align: center;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">Main is the source, test is the unit tests and e2e is both
+    the Cucumber and the Gatling tests. I could have had separate source sets for the Cucumber and Gatling tests but
+    that would have confused IntelliJ's Gradle support too much (and they are nicely split by Cucumber being Java and
+    Gatling being Scala).
+</div>
+<div class="separator" style="clear: both; text-align: left;"><br/></div><h4 style="clear: both; text-align: left;">
+    Cucumber JVM</h4>
+<div class="separator" style="clear: both; text-align: left;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">There are various articles on Cucumber-JVM, here's the
+    steps I used to get this running nicely in the IDE and via Gradle.
+</div>
+<div class="separator" style="clear: both; text-align: left;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">First the new source set:</div>
+<div class="separator" style="clear: both; text-align: left;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">
+    <script src="https://gist.github.com/chbatey/6da41beb0d620618d180.js"></script>
+</div>
+<div class="separator" style="clear: both; text-align: left;">Nothing exciting here, we are using the same classapth as
+    test, we could have had a separate one.
+</div>
+<div class="separator" style="clear: both; text-align: left;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">Next is dependencies, this is actually the Gatling and
+    HTTP client (for hitting our application) as well.
+</div>
+<div class="separator" style="clear: both; text-align: left;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">
+    <script src="https://gist.github.com/chbatey/69fd3687103d0fc36811.js"></script>
+</div>
+<div>We cucumber JUnit and Spring dependencies.<br/><br/>Next is the source code for the acceptance tests. The Features
+    are in the resource folder and the source is in the Java folder. To allow running via Gradle you also create a JUnit
+    test to run all the features. Intellij should work find without this by just running the feature files.<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://4.bp.blogspot.com/-_nq7RQW00gQ/VOtuZwUWFBI/AAAAAAAAAY4/Fyo-A5DWM5g/s1600/Screenshot%2B2015-02-23%2B18.14.28.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="274"
+                                                                              src="http://4.bp.blogspot.com/-_nq7RQW00gQ/VOtuZwUWFBI/AAAAAAAAAY4/Fyo-A5DWM5g/s1600/Screenshot%2B2015-02-23%2B18.14.28.png"
+                                                                              width="320"/></a></div>
+    <br/><br/>Here I have Features separated by type, here's an example Feature:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://4.bp.blogspot.com/-tl1sxHMFDsk/VOtuoX7zIQI/AAAAAAAAAZA/1JFncnGZ_eY/s1600/Screenshot%2B2015-02-23%2B18.16.56.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="62"
+                                                                              src="http://4.bp.blogspot.com/-tl1sxHMFDsk/VOtuoX7zIQI/AAAAAAAAAZA/1JFncnGZ_eY/s1600/Screenshot%2B2015-02-23%2B18.16.56.png"
+                                                                              width="400"/></a></div>
+    <br/></div>
+<div>I like to keep the language at a high level so a non-techy can write these. The JUnit test RunEndToEndTests looks
+    like this:<br/><br/>
+    <script src="https://gist.github.com/chbatey/5027dca5c71034353a8a.js"></script>
+    <br/>This is what Gradle will pick up when we run this from the command line. You could separate this out into
+    multiple tests if you wanted.<br/><br/>For running inside IntelliJ you might need to edit the run configuration to
+    include a different Glue as by default it will be the same as the package your Feature file is in, for this project
+    this wouldn't pick up the GlobalSteps as it is outside of the security/users folder. This is what my configuration
+    looks like, I set this as the default:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://3.bp.blogspot.com/-NEGfd6sGolc/VOtvsHMcodI/AAAAAAAAAZM/hP_Ti0fDwYI/s1600/Screenshot%2B2015-02-23%2B18.21.18.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="71"
+                                                                              src="http://3.bp.blogspot.com/-NEGfd6sGolc/VOtvsHMcodI/AAAAAAAAAZM/hP_Ti0fDwYI/s1600/Screenshot%2B2015-02-23%2B18.21.18.png"
+                                                                              width="400"/></a></div>
+    <br/>Now our features will run if you want to see what the implementation of the Steps look like, checkout the whole
+    project from Github.<br/><br/><h4>Gatling</h4></div>
+<div><br/>This is my first project using Gatling, I wanted my scenarios in code that I could have in version control.
+    Previously I've used JMeter. Where as you can checkin the XML it really isn't nice to look at in diff tools. I've
+    also been forced *weep* to use more GUI based tools like SOASTA and HP Load runner. One thing I haven't looked at is
+    Gatling's support for running many agents. For me to continue using Gatling beyond developer trend analysis this
+    needs to be well supported.
+</div>
+<div><br/></div>
+<div>We already have the dependencies, see the dependencies section above, and we're going to use the same source set.
+    The only difference is we're going to be writing these tests in Scala.
+</div>
+<div><br/></div>
+<div>My first requirement was not to have to have Gatling installed manually on developer and CI boxes. Here's how to do
+    this in Gradle:
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/fc3fb0d15a3b9d925ccc.js"></script>
+</div>
+<div>Where BasicSimulation is the fully qualified name of my Gatling load test. All we do here is define a JavaExec task
+    with the Gatling main class, tell Gatling where our source is and which simulation to run.<br/><br/>To tie all this
+    together so it runs every time we fun Gradle check we add the following at the bottom of our Gradle build file:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://4.bp.blogspot.com/-BHTJ3LX00R0/VOtxmlfhxHI/AAAAAAAAAZY/5DGXQBN_cIs/s1600/Screenshot%2B2015-02-23%2B18.29.29.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="41"
+                                                                              src="http://4.bp.blogspot.com/-BHTJ3LX00R0/VOtxmlfhxHI/AAAAAAAAAZY/5DGXQBN_cIs/s1600/Screenshot%2B2015-02-23%2B18.29.29.png"
+                                                                              width="200"/></a></div>
+    <br/></div>
+<div>This will produce reports that can be published&nbsp;+ consumed by the Jenkins Gatling plugin.<br/><br/>To run the
+    same load test from Intellij we do exactly the same in a run configuration:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-tHM5CWGxWr8/VOtyJRcOJ3I/AAAAAAAAAZg/jrasUENEaTQ/s1600/Screenshot%2B2015-02-23%2B18.31.45.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="104"
+                                                                              src="http://1.bp.blogspot.com/-tHM5CWGxWr8/VOtyJRcOJ3I/AAAAAAAAAZg/jrasUENEaTQ/s1600/Screenshot%2B2015-02-23%2B18.31.45.png"
+                                                                              width="320"/></a></div>
+    <br/></div>
+<div><br/></div>
+<div>A basic Gatling tests looks like this:<br/><br/>
+    <script src="https://gist.github.com/chbatey/9c5ee580cbae648dd30f.js"></script>
+    <br/>This test will run a very simple test where a single virtual user hits the /api/auction URL 100 times with a
+    pause of 10 milliseconds. The top couple of lines start the Spring boot application and register a shut down hook to
+    stop it.<br/><br/>We'll then end up with a report that looks like this:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://2.bp.blogspot.com/-Nn4AYeaUGkA/VOty3il3eCI/AAAAAAAAAZo/5H2s4ujHJ_8/s1600/Screenshot%2B2015-02-23%2B18.34.48.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="251"
+                                                                              src="http://2.bp.blogspot.com/-Nn4AYeaUGkA/VOty3il3eCI/AAAAAAAAAZo/5H2s4ujHJ_8/s1600/Screenshot%2B2015-02-23%2B18.34.48.png"
+                                                                              width="400"/></a></div>
+    <br/></div>
+<div>This is a pretty terrible load test as it runs for 2 seconds and has a single user. But the point of this post is
+    to setup everything so when adding new functionality it is trivial to add new performance and acceptance tests.<br/><br/>That's
+    it, happy testing! If you want to see the whole project is on <a href="https://github.com/chbatey/killrauction">Github</a>.
+    It us under active development so you'll know how I got on with Gatling based if it is still there and there are
+    lots of tests that use it!
+</div>

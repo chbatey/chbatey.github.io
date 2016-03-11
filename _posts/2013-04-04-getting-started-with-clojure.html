@@ -11,4 +11,30 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-16572845138468657
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/04/getting-started-with-clojure.html
 ---
 
-The LJC book club is moving on to the book Functional Programming for the Object Orientated Programmer.<br /><br />The easiest way to get going with Clojure on a mac is with <a href="http://mxcl.github.com/homebrew/">home brew</a>:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">brew install clojure</span><br /><br />This gives you the clj command which launches a REPL where you can do the customary hello world:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-fAHiZJ4D4jA/UV1zVN1eNTI/AAAAAAAAAGQ/h3Xy3DfCarI/s1600/ClojureHelloWorld.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="76" src="http://1.bp.blogspot.com/-fAHiZJ4D4jA/UV1zVN1eNTI/AAAAAAAAAGQ/h3Xy3DfCarI/s320/ClojureHelloWorld.png" width="320" /></a></div><br /><br />Leiningen is a useful tool for creating Clojure projects; it is also available with home brew:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">brew install&nbsp;leiningen</span><br /><br />Creating a clojure project with leiningen is as easy as:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">lein new oobook-lein</span><br /><br />There is a clojure plugin and a leiningen plugin for Intellij that'll make your life much easier. Just go to plugins and search Clojure and Leiningen from the Settings -&gt; Plugins -&gt; Brouse Repositories. Once you have done this you can open your leiningen project in Intellij and you get an environment like this:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-Nzaw_Eu85wM/UV1yLh6fuxI/AAAAAAAAAGE/rhjdVAU0s0U/s1600/IntellijClojure.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="276" src="http://4.bp.blogspot.com/-Nzaw_Eu85wM/UV1yLh6fuxI/AAAAAAAAAGE/rhjdVAU0s0U/s320/IntellijClojure.png" width="320" /></a></div><br />The integration with IntelliJ is really nice.<br /><br />To open up a REPL to play with: Tools -&gt; Start Clojure Console<br />To load the current clojure script into the REPL so you can use anything you've defined: Tools -&gt; Clojure REPL -&gt; Load files to REPL<br /><br />To test your setup you can use the hello world example:<br /><br /><script src="https://gist.github.com/chbatey/5309993.js"></script> And then load it into your REPL then execute the following: <br /><script src="https://gist.github.com/chbatey/b31335ef4374b4ffe195.js"></script> And you should get the output like in the IntelliJ screenshot!
+The LJC book club is moving on to the book Functional Programming for the Object Orientated Programmer.<br/>
+<br/>The easiest way to get going with Clojure on a mac is with <a href="http://mxcl.github.com/homebrew/">home
+    brew</a>:<br/><br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">brew install clojure</span>
+<br/><br/>This gives you the clj command which launches a REPL where you can do the customary hello world:<br/><br/>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://1.bp.blogspot.com/-fAHiZJ4D4jA/UV1zVN1eNTI/AAAAAAAAAGQ/h3Xy3DfCarI/s1600/ClojureHelloWorld.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="76"
+                                                                          src="http://1.bp.blogspot.com/-fAHiZJ4D4jA/UV1zVN1eNTI/AAAAAAAAAGQ/h3Xy3DfCarI/s320/ClojureHelloWorld.png"
+                                                                          width="320"/></a></div><br/>
+<br/>Leiningen is a useful tool for creating Clojure projects; it is also available with home brew:<br/><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">brew install&nbsp;leiningen</span>
+<br/><br/>Creating a clojure project with leiningen is as easy as:<br/><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">lein new oobook-lein</span><br/>
+<br/>There is a clojure plugin and a leiningen plugin for Intellij that'll make your life much easier. Just go to plugins and search Clojure and Leiningen from the Settings -&gt; Plugins -&gt; Brouse Repositories. Once you have done this you can open your leiningen project in Intellij and you get an environment like this:
+<br/><br/>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://4.bp.blogspot.com/-Nzaw_Eu85wM/UV1yLh6fuxI/AAAAAAAAAGE/rhjdVAU0s0U/s1600/IntellijClojure.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="276"
+                                                                          src="http://4.bp.blogspot.com/-Nzaw_Eu85wM/UV1yLh6fuxI/AAAAAAAAAGE/rhjdVAU0s0U/s320/IntellijClojure.png"
+                                                                          width="320"/></a></div>
+<br/>The integration with IntelliJ is really nice.<br/>
+<br/>To open up a REPL to play with: Tools -&gt; Start Clojure Console
+<br/>To load the current clojure script into the REPL so you can use anything you've defined: Tools -&gt; Clojure REPL -&gt; Load files to REPL
+<br/><br/>To test your setup you can use the hello world example:<br/><br/>
+<script src="https://gist.github.com/chbatey/5309993.js"></script> And then load it into your REPL then execute the following:
+<br/>
+<script src="https://gist.github.com/chbatey/b31335ef4374b4ffe195.js"></script> And you should get the output like in the IntelliJ screenshot!

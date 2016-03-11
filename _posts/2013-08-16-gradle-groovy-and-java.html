@@ -14,4 +14,80 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-30892212834174930
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/08/gradle-groovy-and-java.html
 ---
 
-I've been moving my projects from Maven to Gradle and it has given me my first exposure to Groovy as it's Gradle's language of choice. Gradle is the perfect build tool for Java projects, Groovy projects and polyglot projects containing any combination of JVM languages. To get going with Groovy with Gradle you need to add the Groovy plugin to a Gradle script - this extends the Java plugin:<br /><br /><span style="font-family: Courier New, Courier, monospace;"><span style="font-size: xx-small;">apply plugin: 'groovy'</span></span><br /><span style="font-family: Courier New, Courier, monospace;"><br /></span><span style="font-family: inherit;">Then the Gradle build will look for both Groovy and Java when you build your project:</span><br /><span style="font-family: Courier New, Courier, monospace;"><br /></span><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">Christophers-MacBook-Pro:testing chbatey$ gradle build</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileJava</b> UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileGroovy</b> UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:processResources UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:classes UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:jar UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:assemble UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileTestJava</b> UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileTestGroovy</b> UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:processTestResources UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:testClasses UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:test UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:check UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:build UP-TO-DATE</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br /></span><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"></span><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">BUILD SUCCESSFUL</span><br /><div><br /></div><div>IntelliJ's support for Gradle has improved vastly as of late but if you experience problems revert to the Gradle idea plugin instead - I tend to use it if the Gralde project is more than a simple Groovy/Java project. Importing a project with just the above in your Gradle script and having created source folders for Java and Groovy IntelliJ should recognise everything:</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-5BfGyNTGCJ8/Ug5vNE9_t5I/AAAAAAAAAIE/XcYFHtHXmf4/s1600/IntelliJGroovyJava.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="252" src="http://2.bp.blogspot.com/-5BfGyNTGCJ8/Ug5vNE9_t5I/AAAAAAAAAIE/XcYFHtHXmf4/s320/IntelliJGroovyJava.png" width="320" /></a></div><div><br /></div><div>Now lets create some Groovy and Java! To allow us to interchange between Java and Groovy and be able to add some unit tests, add the following to the build.gradle:</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">repositories {</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; mavenCentral()</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">}</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">dependencies {</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; compile 'org.codehaus.groovy:groovy:2.1.6'</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; testCompile 'junit:junit:4.+'</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">}</span></div></div><div><br /></div><div>Now lets see a Groovy class testing a Java class:</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-ui9NAGyUZxo/Ug6GltZE6sI/AAAAAAAAAIU/D9AiDc7t00M/s1600/Screen+Shot+2013-08-16+at+21.06.40.png" imageanchor="1" style="clear: left; float: left; margin-bottom: 1em; margin-right: 1em;"><img border="0" height="192" src="http://1.bp.blogspot.com/-ui9NAGyUZxo/Ug6GltZE6sI/AAAAAAAAAIU/D9AiDc7t00M/s640/Screen+Shot+2013-08-16+at+21.06.40.png" width="640" /></a></div><div><br /></div><div>On the left we can see a Java class in the main source tree and on the left a Groovy class testing it. This is a nice way to learn some Groovy and write tests with less boilerplate. You can say goodbye to types and semicolons. It is an easy transition for a Java developer as all Java is valid Groovy so you can write Java and Groovyify it as much or as little as you like. There is nothing stopping you from adding production Groovy code and testing it with Java as well.</div><div><br /></div><div>If you want to stay on the command line then just run gradle test from the command line. If you want the source it's on GitHub:&nbsp;<a href="https://github.com/chbatey/GroovyTestingJava">https://github.com/chbatey/GroovyTestingJava</a></div>
+I've been moving my projects from Maven to Gradle and it has given me my first exposure to Groovy as it's Gradle's language of choice. Gradle is the perfect build tool for Java projects, Groovy projects and polyglot projects containing any combination of JVM languages. To get going with Groovy with Gradle you need to add the Groovy plugin to a Gradle script - this extends the Java plugin:
+<br/><br/><span style="font-family: Courier New, Courier, monospace;"><span style="font-size: xx-small;">apply plugin: 'groovy'</span></span>
+<br/><span style="font-family: Courier New, Courier, monospace;"><br/></span><span style="font-family: inherit;">Then the Gradle build will look for both Groovy and Java when you build your project:</span>
+<br/><span style="font-family: Courier New, Courier, monospace;"><br/></span><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">Christophers-MacBook-Pro:testing chbatey$ gradle build</span>
+<br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileJava</b> UP-TO-DATE</span>
+<br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileGroovy</b> UP-TO-DATE</span>
+<br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:processResources UP-TO-DATE</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:classes UP-TO-DATE</span><br/>
+<span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:jar UP-TO-DATE</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:assemble UP-TO-DATE</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileTestJava</b> UP-TO-DATE</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:<b>compileTestGroovy</b> UP-TO-DATE</span>
+<br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:processTestResources UP-TO-DATE</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:testClasses UP-TO-DATE</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:test UP-TO-DATE</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:check UP-TO-DATE</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">:build UP-TO-DATE</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br/></span><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;"></span><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">BUILD SUCCESSFUL</span><br/>
+<div><br/></div>
+<div>IntelliJ's support for Gradle has improved vastly as of late but if you experience problems revert to the Gradle
+    idea plugin instead - I tend to use it if the Gralde project is more than a simple Groovy/Java project. Importing a
+    project with just the above in your Gradle script and having created source folders for Java and Groovy IntelliJ
+    should recognise everything:
+</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://2.bp.blogspot.com/-5BfGyNTGCJ8/Ug5vNE9_t5I/AAAAAAAAAIE/XcYFHtHXmf4/s1600/IntelliJGroovyJava.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="252"
+                                                                          src="http://2.bp.blogspot.com/-5BfGyNTGCJ8/Ug5vNE9_t5I/AAAAAAAAAIE/XcYFHtHXmf4/s320/IntelliJGroovyJava.png"
+                                                                          width="320"/></a></div>
+<div><br/></div>
+<div>Now lets create some Groovy and Java! To allow us to interchange between Java and Groovy and be able to add some
+    unit tests, add the following to the build.gradle:
+</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">repositories {</span></div>
+    <div><span
+            style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; mavenCentral()</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">}</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">dependencies {</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; compile 'org.codehaus.groovy:groovy:2.1.6'</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; testCompile 'junit:junit:4.+'</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">}</span></div>
+</div>
+<div><br/></div>
+<div>Now lets see a Groovy class testing a Java class:</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://1.bp.blogspot.com/-ui9NAGyUZxo/Ug6GltZE6sI/AAAAAAAAAIU/D9AiDc7t00M/s1600/Screen+Shot+2013-08-16+at+21.06.40.png"
+        imageanchor="1" style="clear: left; float: left; margin-bottom: 1em; margin-right: 1em;"><img border="0"
+                                                                                                      height="192"
+                                                                                                      src="http://1.bp.blogspot.com/-ui9NAGyUZxo/Ug6GltZE6sI/AAAAAAAAAIU/D9AiDc7t00M/s640/Screen+Shot+2013-08-16+at+21.06.40.png"
+                                                                                                      width="640"/></a>
+</div>
+<div><br/></div>
+<div>On the left we can see a Java class in the main source tree and on the left a Groovy class testing it. This is a
+    nice way to learn some Groovy and write tests with less boilerplate. You can say goodbye to types and semicolons. It
+    is an easy transition for a Java developer as all Java is valid Groovy so you can write Java and Groovyify it as
+    much or as little as you like. There is nothing stopping you from adding production Groovy code and testing it with
+    Java as well.
+</div>
+<div><br/></div>
+<div>If you want to stay on the command line then just run gradle test from the command line. If you want the source
+    it's on GitHub:&nbsp;<a href="https://github.com/chbatey/GroovyTestingJava">https://github.com/chbatey/GroovyTestingJava</a>
+</div>

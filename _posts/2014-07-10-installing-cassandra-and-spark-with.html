@@ -14,4 +14,66 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-19828380911477898
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/07/installing-cassandra-and-spark-with.html
 ---
 
-I am currently doing a proof of concept with Spark and Cassandra. I quickly need to be able to create and start Cassandra and Spark clusters. Ansible to the rescue!<br /><br />I split this my ansible playbook into three roles:<br /><ul><li>Cassandra</li><li>Ops center</li><li>Spark</li></ul><div>My main playbook is very simple:</div><br /><script src="https://gist.github.com/chbatey/bb4e581063ee3d53dfbb.js"></script> I have some hosts defined in a separate hosts file called m25-cassandra. I've decided to install htop, I could have out this in a general server role.<br /><br />I also define a few variables, these of course course could be defined else where per role:<br /><ul><li>cluster_name - this will replace the cluser name in each of the hosts cassandra.yaml</li><li>seeds - as above</li></ul><div>So lets take a look at each role.</div><div><br /></div><h4>Cassandra</h4><div><br />Here are the tasks: </div><br /><script src="https://gist.github.com/chbatey/a8af2dda797999fc0109.js"></script> This is doing the following:<br /><ul><li>Installing a JRE</li><li>Adding the Apache Cassandra debian repository</li><li>Adding the keys for the debian repository</li><li>Installing the latest version of Cassandra</li><li>Replacing the cassandra.yaml (details later)</li><li>Ensuring Cassandra is started</li></ul><div>The template cassandra.yaml uses the following variables:</div><ul><li>cluster_name: '{{ "{{" }} cluster_name }}' - So we can rename the cluster</li><li>- seeds: "{{ "{{" }} seeds }}" - So when we add a new node it connects to the cluster</li><li>listen_address: {{ "{{" }} inventory_hostname }} - Listen on the nodes external IP so other nodes can communicate with it</li><li>rpc_address: {{ "{{" }} inventory_hostname }} - So we can connect ops center and cqlsh to the nodes</li></ul><div>Magic! Now adding new hosts to my hosts file with the tag m25_cassandra will get Cassandra installed, connected to the cluster and started.<br /><br /><h4>Ops Center</h4></div><div><br /></div><div>The tasks file for ops center:</div><div><br /></div><script src="https://gist.github.com/chbatey/0cf2d8a042e45b854771.js"></script> This is doing the following:<br /><ul><li>Adding the Datastax community debian repository</li><li>Adding the key for the repo</li><li>Installing Ops Center</li><li>Starting Ops Center</li></ul><div>No templates here as all the default configuration is fine.</div><div><br /></div><h4>Spark</h4><div><br />The spark maven build can build a debian package but I didn't find a public debian repo with it in so the following just downloads and unzips the Spark package:</div><div><br /></div><script src="https://gist.github.com/chbatey/bb1af706945a3b118257.js"></script> <div><br /></div><div>I start the workers using the start-slaves.sh script from my local master do don't need to start anything on the nodes that have Cassandra on. <br /><br /><h4>Conclusion</h4></div><div><br /></div><div>Ansible makes it very easy to install distributed systems like Cassandra. The thought of doing it manually fills me with pain! This is just got a PoC, I don't suggest downloading Spark from the public internet or always installing the latest version of Cassandra for your production systems. The full souce including templates and directory structure is <a href="https://github.com/chbatey/ubuntu-ansible">here</a>.</div>
+I am currently doing a proof of concept with Spark and Cassandra. I quickly need to be able to create and start Cassandra and Spark clusters. Ansible to the rescue!
+<br/><br/>I split this my ansible playbook into three roles:<br/>
+<ul>
+    <li>Cassandra</li>
+    <li>Ops center</li>
+    <li>Spark</li>
+</ul>
+<div>My main playbook is very simple:</div><br/>
+<script src="https://gist.github.com/chbatey/bb4e581063ee3d53dfbb.js"></script> I have some hosts defined in a separate hosts file called m25-cassandra. I've decided to install htop, I could have out this in a general server role.
+<br/><br/>I also define a few variables, these of course course could be defined else where per role:<br/>
+<ul>
+    <li>cluster_name - this will replace the cluser name in each of the hosts cassandra.yaml</li>
+    <li>seeds - as above</li>
+</ul>
+<div>So lets take a look at each role.</div>
+<div><br/></div><h4>Cassandra</h4>
+<div><br/>Here are the tasks:</div><br/>
+<script src="https://gist.github.com/chbatey/a8af2dda797999fc0109.js"></script> This is doing the following:<br/>
+<ul>
+    <li>Installing a JRE</li>
+    <li>Adding the Apache Cassandra debian repository</li>
+    <li>Adding the keys for the debian repository</li>
+    <li>Installing the latest version of Cassandra</li>
+    <li>Replacing the cassandra.yaml (details later)</li>
+    <li>Ensuring Cassandra is started</li>
+</ul>
+<div>The template cassandra.yaml uses the following variables:</div>
+<ul>
+    <li>cluster_name: '{{ "{{" }} cluster_name }}' - So we can rename the cluster</li>
+    <li>- seeds: "{{ "{{" }} seeds }}" - So when we add a new node it connects to the cluster</li>
+    <li>listen_address: {{ "{{" }} inventory_hostname }} - Listen on the nodes external IP so other nodes can
+        communicate with it
+    </li>
+    <li>rpc_address: {{ "{{" }} inventory_hostname }} - So we can connect ops center and cqlsh to the nodes</li>
+</ul>
+<div>Magic! Now adding new hosts to my hosts file with the tag m25_cassandra will get Cassandra installed, connected to
+    the cluster and started.<br/><br/><h4>Ops Center</h4></div>
+<div><br/></div>
+<div>The tasks file for ops center:</div>
+<div><br/></div>
+<script src="https://gist.github.com/chbatey/0cf2d8a042e45b854771.js"></script> This is doing the following:<br/>
+<ul>
+    <li>Adding the Datastax community debian repository</li>
+    <li>Adding the key for the repo</li>
+    <li>Installing Ops Center</li>
+    <li>Starting Ops Center</li>
+</ul>
+<div>No templates here as all the default configuration is fine.</div>
+<div><br/></div><h4>Spark</h4>
+<div><br/>The spark maven build can build a debian package but I didn't find a public debian repo with it in so the
+    following just downloads and unzips the Spark package:
+</div>
+<div><br/></div>
+<script src="https://gist.github.com/chbatey/bb1af706945a3b118257.js"></script>
+<div><br/></div>
+<div>I start the workers using the start-slaves.sh script from my local master do don't need to start anything on the
+    nodes that have Cassandra on. <br/><br/><h4>Conclusion</h4></div>
+<div><br/></div>
+<div>Ansible makes it very easy to install distributed systems like Cassandra. The thought of doing it manually fills me
+    with pain! This is just got a PoC, I don't suggest downloading Spark from the public internet or always installing
+    the latest version of Cassandra for your production systems. The full souce including templates and directory
+    structure is <a href="https://github.com/chbatey/ubuntu-ansible">here</a>.
+</div>

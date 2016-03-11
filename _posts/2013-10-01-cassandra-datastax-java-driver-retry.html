@@ -12,4 +12,57 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-44995127554581530
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/10/cassandra-datastax-java-driver-retry.html
 ---
 
-The Datastax Java Driver for Cassandra exposes its strategy for retrying via the following interface:<br /><br /><script src="https://gist.github.com/chbatey/6783117.js"></script> There are three scenarios you can control retry policy for:<br /><ol><li>Read time out: When a coordinator received the request and sent the read to replica(s) but the replica(s) did not respond in time</li><li>Write timeout: As above but for writes</li><li>Unavailable: When the coordinator is aware there aren't enough replica available without sending the read/write request on</li></ol><h4>What is the default behaviour?</h4><div><br />The DefaultRetryPolicy retries with the following behaviour:</div><div><ol><li>Read timeout: When enough replica are available but the data did not come back within the configured read time out&nbsp;</li><li>Write timeout: Only if the initial phase of a batch write times out - see&nbsp;<a href="http://cassandra.apache.org/doc/cql3/CQL.html#batchStmt">cassandra batch statement</a></li><li>Unavailable timeout: Never</li></ol><h4>How do I configure the value for the read and write timeout?</h4></div><div><br />This is configured in the cassandra.yaml on the Cassandra server. &nbsp;The default is 10 seconds, you can change the following properties:</div><div><pre># How long the coordinator should wait for read operations to complete<br />read_request_timeout_in_ms: 10000<br /># How long the coordinator should wait for writes to complete<br />write_request_timeout_in_ms: 10000</pre><h4>What are the other policies?</h4></div><div><span style="font-family: inherit;"><u><b><br /></b></u></span><span style="font-family: inherit;"><u><b>DowngradingConsistencyRetryPolicy</b></u></span><br /><span style="font-family: inherit;"><u><b><br /></b></u></span>The most complicated retry policy and comes with a big warning: your read/write may be re-tried at a lower consistency. So if you have business requirements to not report success if you don't meet a certain level of consistency then use this with cation.<br /><br />What does it do?<br /><ol><li>Read: If at least one replica responded then the read is retried at a lower consistency</li><li>Write: Retries for unlogged batch queries when at least one replica responded (see&nbsp;http://www.datastax.com/dev/blog/atomic-batches-in-cassandra-1-2) and for all other types of writes the timeout is just ignored if at least one replica acknowledged the write (essentially ignoring the consistency request)</li><li>Unavailable: If at least one replica is available then the query is re-tried with a lower consistency</li></ol><span style="font-family: inherit;"><u><b><br /></b></u></span><span style="font-family: inherit;"><u><b>FallthroughRetryPolicy</b></u></span><br /><span style="font-family: inherit;"><u><b><br /></b></u></span>No retrying! Any failure is re-thrown to the client.<br /><span style="font-family: inherit;"><u><b><br /></b><b>LoggingRetryPolicy</b></u></span><br /><span style="font-family: inherit;"><u><b><br /></b></u></span>This is just a decorator policy that you can wrap around any other policy that logs ignored (no retry) and any actual retries. The driver uses SLF4J and logs at INFO level.<br /><br /><h4>How do I use a different policy?</h4></div><div><br />Simply add it with creating your Cluster. The retry policies all have a singleton you can use e.g:</div><br /><script src="https://gist.github.com/chbatey/6783769.js"></script> <br /><h4></h4><h4>Conclusion</h4><div><br />The Datastax driver is very open for extension as it exposes its strategies for retry, load balancing and reconnection.&nbsp;</div><div><br /></div><div>The retry policy is very easy to work with as all the current implementations are stateless. I'll follow this post up with how to implement your own retry policy.</div>
+The Datastax Java Driver for Cassandra exposes its strategy for retrying via the following interface:<br/><br/>
+<script src="https://gist.github.com/chbatey/6783117.js"></script> There are three scenarios you can control retry policy for:
+<br/>
+<ol>
+    <li>Read time out: When a coordinator received the request and sent the read to replica(s) but the replica(s) did
+        not respond in time
+    </li>
+    <li>Write timeout: As above but for writes</li>
+    <li>Unavailable: When the coordinator is aware there aren't enough replica available without sending the read/write
+        request on
+    </li>
+</ol><h4>What is the default behaviour?</h4>
+<div><br/>The DefaultRetryPolicy retries with the following behaviour:</div>
+<div>
+    <ol>
+        <li>Read timeout: When enough replica are available but the data did not come back within the configured read
+            time out&nbsp;</li>
+        <li>Write timeout: Only if the initial phase of a batch write times out - see&nbsp;<a
+                href="http://cassandra.apache.org/doc/cql3/CQL.html#batchStmt">cassandra batch statement</a></li>
+        <li>Unavailable timeout: Never</li>
+    </ol>
+    <h4>How do I configure the value for the read and write timeout?</h4></div>
+<div><br/>This is configured in the cassandra.yaml on the Cassandra server. &nbsp;The default is 10 seconds, you can
+    change the following properties:
+</div>
+<div>
+    <pre># How long the coordinator should wait for read operations to complete<br/>read_request_timeout_in_ms: 10000<br/># How long the coordinator should wait for writes to complete<br/>write_request_timeout_in_ms: 10000</pre>
+    <h4>What are the other policies?</h4></div>
+<div><span style="font-family: inherit;"><u><b><br/></b></u></span><span style="font-family: inherit;"><u><b>DowngradingConsistencyRetryPolicy</b></u></span><br/><span
+        style="font-family: inherit;"><u><b><br/></b></u></span>The most complicated retry policy and comes with a big
+    warning: your read/write may be re-tried at a lower consistency. So if you have business requirements to not report
+    success if you don't meet a certain level of consistency then use this with cation.<br/><br/>What does it do?<br/>
+    <ol>
+        <li>Read: If at least one replica responded then the read is retried at a lower consistency</li>
+        <li>Write: Retries for unlogged batch queries when at least one replica responded (see&nbsp;http://www.datastax.com/dev/blog/atomic-batches-in-cassandra-1-2)
+            and for all other types of writes the timeout is just ignored if at least one replica acknowledged the write
+            (essentially ignoring the consistency request)
+        </li>
+        <li>Unavailable: If at least one replica is available then the query is re-tried with a lower consistency</li>
+    </ol>
+    <span style="font-family: inherit;"><u><b><br/></b></u></span><span style="font-family: inherit;"><u><b>FallthroughRetryPolicy</b></u></span><br/><span
+            style="font-family: inherit;"><u><b><br/></b></u></span>No retrying! Any failure is re-thrown to the client.<br/><span
+            style="font-family: inherit;"><u><b><br/></b><b>LoggingRetryPolicy</b></u></span><br/><span
+            style="font-family: inherit;"><u><b><br/></b></u></span>This is just a decorator policy that you can wrap
+    around any other policy that logs ignored (no retry) and any actual retries. The driver uses SLF4J and logs at INFO
+    level.<br/><br/><h4>How do I use a different policy?</h4></div>
+<div><br/>Simply add it with creating your Cluster. The retry policies all have a singleton you can use e.g:</div><br/>
+<script src="https://gist.github.com/chbatey/6783769.js"></script> <br/><h4></h4><h4>Conclusion</h4>
+<div><br/>The Datastax driver is very open for extension as it exposes its strategies for retry, load balancing and
+    reconnection.&nbsp;</div>
+<div><br/></div>
+<div>The retry policy is very easy to work with as all the current implementations are stateless. I'll follow this post
+    up with how to implement your own retry policy.
+</div>

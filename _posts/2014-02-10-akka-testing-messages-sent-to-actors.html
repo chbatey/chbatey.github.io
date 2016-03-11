@@ -13,4 +13,18 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-82640683056086579
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/02/akka-testing-messages-sent-to-actors.html
 ---
 
-I've blogged previously about <a href="http://christopher-batey.blogspot.ca/2014/01/akka-testing-that-actor-sends-message.html" target="_blank">testing messages sent back to the sender</a> and <a href="http://christopher-batey.blogspot.ca/2014/02/akka-testing-messages-sent-to-child.html" target="_blank">to a child actor</a>. The final common scenario I come across is testing actors that send a messages back to its supervisor/parent. If it is in response to a message from the parent you can use the same technique as described in <a href="http://christopher-batey.blogspot.ca/2014/01/akka-testing-that-actor-sends-message.html" target="_blank">testing messages sent back to the sender</a>.<br /><br />However, if that is not the case then TestKit has a very simple way you can do it with the TestActorRef and a TestProbe. Any where you have a piece of code that looks like this:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">context.parent ! "Any message"</span><br /><br />For example: <br /><br /><script src="https://gist.github.com/chbatey/8928360.js"></script> Then you can test it by passing a TestProbe to your TestActorRef and using the expect* functions on the TestProbe. So to test the actor above your test will look something like this:<br /><br /><script src="https://gist.github.com/chbatey/8928367.js"></script> As you can see the TestActorRef can take an ActorRef to use as a parent when you use the apply method that takes in a Props.<br /><br /><a href="https://github.com/chbatey/akka-testing" target="_blank">Full code here</a>. Happy testing.
+I've blogged previously about <a
+        href="http://christopher-batey.blogspot.ca/2014/01/akka-testing-that-actor-sends-message.html" target="_blank">testing
+    messages sent back to the sender</a> and <a
+        href="http://christopher-batey.blogspot.ca/2014/02/akka-testing-messages-sent-to-child.html" target="_blank">to
+    a child
+    actor</a>. The final common scenario I come across is testing actors that send a messages back to its supervisor/parent. If it is in response to a message from the parent you can use the same technique as described in
+<a href="http://christopher-batey.blogspot.ca/2014/01/akka-testing-that-actor-sends-message.html" target="_blank">testing
+    messages sent back to the sender</a>.<br/>
+<br/>However, if that is not the case then TestKit has a very simple way you can do it with the TestActorRef and a TestProbe. Any where you have a piece of code that looks like this:
+<br/><br/><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">context.parent ! "Any message"</span>
+<br/><br/>For example: <br/><br/>
+<script src="https://gist.github.com/chbatey/8928360.js"></script> Then you can test it by passing a TestProbe to your TestActorRef and using the expect* functions on the TestProbe. So to test the actor above your test will look something like this:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/8928367.js"></script> As you can see the TestActorRef can take an ActorRef to use as a parent when you use the apply method that takes in a Props.
+<br/><br/><a href="https://github.com/chbatey/akka-testing" target="_blank">Full code here</a>. Happy testing.

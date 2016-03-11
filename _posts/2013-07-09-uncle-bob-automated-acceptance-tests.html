@@ -3,10 +3,45 @@ layout: post
 title: 'Uncle Bob: Automated acceptance tests'
 date: '2013-07-09T12:25:00.004-07:00'
 author: Christopher Batey
-tags: 
+tags:
 modified_time: '2013-07-09T12:25:52.997-07:00'
 blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-636992850941067673
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/07/uncle-bob-automated-acceptance-tests.html
 ---
 
-Yesterday I went to see Uncle Bob at the Skills Matter Exchange in London. Having read and enjoyed Clean Code and Clean Coder it was great to see Uncle Bob in the flesh.<br /><br />The talk was on automated acceptance tests. Such a simple topic - we all automate our acceptance tests don't we?<br /><br />A few points I took away from the talk:<br /><br /><ul><li>Can we get our stakeholders to write our acceptance tests? If not is it at least business analysts or QAs? If it is developers you're in trouble!</li><li>Developers are brilliant at rationalising about concepts such as "is it done?". Don't trust a developer to tell you something is done!</li><li>Acceptance tests should be automated at the latest half way through an iteration if your QAs are going to have time to do&nbsp;exploratory&nbsp;testing</li><li>The QAs should be the smartest people in your team. They should be specifying the system with the business analyst not verifying it after it has been developed</li><li>Your functional tests are just another component of the system. If that part of brittle it means your project is badly designed! Go back to the drawing board.</li></ul><div><br /></div><div>A final point that stuck with me is that acceptance tests don't need to be black box tests. The language they are written in should be high level (it was your stake holder who wrote it right??). But the implementation could interact with a version of your system that has the database or HTTP layer mocked out. Think of it this way:</div><div><ul><li>How many times do you need to test the login functionality of your application? <b>Once!</b></li><li>How many times will you test it if all your tests go through the GUI/web front end?&nbsp;<b>Hundreds!</b></li></ul><div>Hearing Uncle Bob speak reminds me that even when I am working on a project I think is being developed in a fantastic way, with fantastic testing - I can still try and make it better.</div></div>
+Yesterday I went to see Uncle Bob at the Skills Matter Exchange in London. Having read and enjoyed Clean Code and Clean Coder it was great to see Uncle Bob in the flesh.
+<br/>
+<br/>The talk was on automated acceptance tests. Such a simple topic - we all automate our acceptance tests don't we?
+<br/><br/>A few points I took away from the talk:<br/><br/>
+<ul>
+    <li>Can we get our stakeholders to write our acceptance tests? If not is it at least business analysts or QAs? If it
+        is developers you're in trouble!
+    </li>
+    <li>Developers are brilliant at rationalising about concepts such as "is it done?". Don't trust a developer to tell
+        you something is done!
+    </li>
+    <li>Acceptance tests should be automated at the latest half way through an iteration if your QAs are going to have
+        time to do&nbsp;exploratory&nbsp;testing
+    </li>
+    <li>The QAs should be the smartest people in your team. They should be specifying the system with the business
+        analyst not verifying it after it has been developed
+    </li>
+    <li>Your functional tests are just another component of the system. If that part of brittle it means your project is
+        badly designed! Go back to the drawing board.
+    </li>
+</ul>
+<div><br/></div>
+<div>A final point that stuck with me is that acceptance tests don't need to be black box tests. The language they are
+    written in should be high level (it was your stake holder who wrote it right??). But the implementation could
+    interact with a version of your system that has the database or HTTP layer mocked out. Think of it this way:
+</div>
+<div>
+    <ul>
+        <li>How many times do you need to test the login functionality of your application? <b>Once!</b></li>
+        <li>How many times will you test it if all your tests go through the GUI/web front end?&nbsp;<b>Hundreds!</b>
+        </li>
+    </ul>
+    <div>Hearing Uncle Bob speak reminds me that even when I am working on a project I think is being developed in a
+        fantastic way, with fantastic testing - I can still try and make it better.
+    </div>
+</div>

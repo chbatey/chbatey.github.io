@@ -15,4 +15,64 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-81057636156533790
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/10/building-fault-tolerant-services-do-you.html
 ---
 
-One of the simplest sounding requirements that you might get as a software engineer is that your service should either succeed or timeout within N seconds.<br /><br />However as we move toward more distributed services a.k.a microservices, this is harder than it sounds.<br /><br />Even if all your service did was call out to another HTTP service over TCP, do some logic, then return a response you have to deal with:<br /><ul><li>Thread creation duration</li><li>Socket connection timeout to the dependency</li><li>Socket read timeout to the dependency</li><li>Resource acquisition e.g how long a it takes for your request thread to get hold of a resource from a pool</li></ul><div>If you stop there you might think you have all your bases covered:</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-IwQbdWCw90o/VEZFdkebmiI/AAAAAAAAAS0/WEBShbj_pCM/s1600/NearlyAFullNetworkRequest.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://2.bp.blogspot.com/-IwQbdWCw90o/VEZFdkebmiI/AAAAAAAAAS0/WEBShbj_pCM/s1600/NearlyAFullNetworkRequest.png" height="211" width="320" /></a></div><div><br /></div><div>Looks good, you are taking into account the time taken to get a resource from a resource pool for the third party, any connection timeouts in case you need to re-connect and then finally you set a socket read timeout on the request.</div><div><br /></div><div>This covers timing out in most cases, but what happens if the dependency is feeding you data very slowly?&nbsp;</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-oVBt13zsY30/VEZF9o9vOHI/AAAAAAAAAS8/b704tKrwwbo/s1600/FullNetworkRequest.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://3.bp.blogspot.com/-oVBt13zsY30/VEZF9o9vOHI/AAAAAAAAAS8/b704tKrwwbo/s1600/FullNetworkRequest.png" height="276" width="320" /></a></div><div></div><div>Here a socket read time out won't help you as the underlying socket library you're using is receiving some data per read time out period. For large payloads this scenario can leave your application appearing to hang.</div><div><br /></div><div><b>So how to you solve this?</b> To be sure that you as an application will time out than you can't rely on network level timeouts. A common pattern is to have a worker queue and thread pool for each dependency, that way you can timeout on the request in process. A fantastic library for this is <a href="https://github.com/Netflix/Hystrix" target="_blank">Netflix's Hystrix</a>.</div><div><br /></div><div><b>How do you do automated testing for this? </b>If you're like me and love to test everything then this is a tough one. However the combination of running your dependency (or a mock like <a href="http://wiremock.org/" target="_blank">wiremock</a>) on a separate VM that is provisioned for the test, and then using linux command like iptables and tc, then you can automate the tests for slow network. <a href="https://github.com/tomakehurst/saboteur" target="_blank">Saboteur</a> is a small python library that does this for you, and offers a HTTP API for slowing network, dropping packets etc.</div><div><br /></div><div><b>Isn't this slow? </b>On a Jenkins server, the provision of the VM takes ~1 minute with vagrant after the base box is downloaded. For development I always have it running.&nbsp;</div><div><br /></div><div>The whole stack of an application under test, wiremock, vagrant and saboteur will be the topic of a follow up post that will contain a full working example.</div><div><br /></div><div>This article showed how complicated this is for a single dependency, what about if you call out to many dependencies? I tend to use a library like Hystrix to wrap calls to dependencies, but in-house code to wrap the whole request and timeout. This allows one dependency to be slow while the others are fast, which is more flexible than taking your SLA and dividing it between your dependencies.&nbsp;</div>
+One of the simplest sounding requirements that you might get as a software engineer is that your service should either succeed or timeout within N seconds.
+<br/><br/>However as we move toward more distributed services a.k.a microservices, this is harder than it sounds.<br/>
+<br/>Even if all your service did was call out to another HTTP service over TCP, do some logic, then return a response you have to deal with:
+<br/>
+<ul>
+    <li>Thread creation duration</li>
+    <li>Socket connection timeout to the dependency</li>
+    <li>Socket read timeout to the dependency</li>
+    <li>Resource acquisition e.g how long a it takes for your request thread to get hold of a resource from a pool</li>
+</ul>
+<div>If you stop there you might think you have all your bases covered:</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://2.bp.blogspot.com/-IwQbdWCw90o/VEZFdkebmiI/AAAAAAAAAS0/WEBShbj_pCM/s1600/NearlyAFullNetworkRequest.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://2.bp.blogspot.com/-IwQbdWCw90o/VEZFdkebmiI/AAAAAAAAAS0/WEBShbj_pCM/s1600/NearlyAFullNetworkRequest.png"
+                                                                          height="211" width="320"/></a></div>
+<div><br/></div>
+<div>Looks good, you are taking into account the time taken to get a resource from a resource pool for the third party,
+    any connection timeouts in case you need to re-connect and then finally you set a socket read timeout on the
+    request.
+</div>
+<div><br/></div>
+<div>This covers timing out in most cases, but what happens if the dependency is feeding you data very
+    slowly?&nbsp;</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://3.bp.blogspot.com/-oVBt13zsY30/VEZF9o9vOHI/AAAAAAAAAS8/b704tKrwwbo/s1600/FullNetworkRequest.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://3.bp.blogspot.com/-oVBt13zsY30/VEZF9o9vOHI/AAAAAAAAAS8/b704tKrwwbo/s1600/FullNetworkRequest.png"
+                                                                          height="276" width="320"/></a></div>
+<div></div>
+<div>Here a socket read time out won't help you as the underlying socket library you're using is receiving some data per
+    read time out period. For large payloads this scenario can leave your application appearing to hang.
+</div>
+<div><br/></div>
+<div><b>So how to you solve this?</b> To be sure that you as an application will time out than you can't rely on network
+    level timeouts. A common pattern is to have a worker queue and thread pool for each dependency, that way you can
+    timeout on the request in process. A fantastic library for this is <a href="https://github.com/Netflix/Hystrix"
+                                                                          target="_blank">Netflix's Hystrix</a>.
+</div>
+<div><br/></div>
+<div><b>How do you do automated testing for this? </b>If you're like me and love to test everything then this is a tough
+    one. However the combination of running your dependency (or a mock like <a href="http://wiremock.org/"
+                                                                               target="_blank">wiremock</a>) on a
+    separate VM that is provisioned for the test, and then using linux command like iptables and tc, then you can
+    automate the tests for slow network. <a href="https://github.com/tomakehurst/saboteur" target="_blank">Saboteur</a>
+    is a small python library that does this for you, and offers a HTTP API for slowing network, dropping packets etc.
+</div>
+<div><br/></div>
+<div><b>Isn't this slow? </b>On a Jenkins server, the provision of the VM takes ~1 minute with vagrant after the base
+    box is downloaded. For development I always have it running.&nbsp;</div>
+<div><br/></div>
+<div>The whole stack of an application under test, wiremock, vagrant and saboteur will be the topic of a follow up post
+    that will contain a full working example.
+</div>
+<div><br/></div>
+<div>This article showed how complicated this is for a single dependency, what about if you call out to many
+    dependencies? I tend to use a library like Hystrix to wrap calls to dependencies, but in-house code to wrap the
+    whole request and timeout. This allows one dependency to be slow while the others are fast, which is more flexible
+    than taking your SLA and dividing it between your dependencies.&nbsp;</div>

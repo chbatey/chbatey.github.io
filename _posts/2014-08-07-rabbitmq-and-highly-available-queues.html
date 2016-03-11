@@ -11,4 +11,76 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-25201592787072054
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/08/rabbitmq-and-highly-available-queues.html
 ---
 
-RabbiqMQ is a AMQP broker with an interesting set of HA abilities. Do a little research and your head will start spinning working out the differences between making messages persistent, or queues durable, or was it durable messages and HA queues with transactions? Hopefully the following is all the information you need in one place.<br /><br />Before evaluating them you need to define your requirements.<br /><br /><ul><li>Do you want queues to survive broker failures?&nbsp;</li><li>Do you want unconsumed messages to survive a broker failure?</li><li>What matters more, publisher speed, or the above? Or do you want a nice compromise?</li></ul><br />RabbitMQ allows you to:<br /><br /><ul><li>Make a <b>cluster</b> of Rabbits where clients can communicate with any node in the cluster</li><li>Make a queue <b>durable</b>, meaning the queue definition itself will survive broker failure</li><li>Make a message <b>persistent</b>, meaning that it will get stored to disk, which you do by setting a message's <b>delivery_mode</b></li><li>Make a queue <b>HA</b>, meaning its contents will be replicated across brokers, either a specified list, all of them or a number of them&nbsp;</li><li>Even an&nbsp;<b>HA </b>queue<b>&nbsp;</b>has a single <b>master</b> that handles all operations on that queue even if the client is connected to a different node in the cluster, the <b>master</b>&nbsp;sends information to the replicas, these are called <b>slaves</b></li></ul><div>Okay so you have a <b>durable</b> queue that is <b>HA</b> and you're using&nbsp;<b>persistent</b> messages (you really want it all!). How do you work with the queue correctly?</div><div><br /></div><h4>Producing to an HA queue</h4><div><br /></div><div>You have three options for publishing to a HA queue:</div><div><ul><li>Accept the defaults, the publish will return with no guarantees in the result of broker failure</li><li><b>Publisher confirms</b></li><li><b>Transactions</b></li></ul><div><b>The defaults</b>: You went to all that effort of making a <b>durable</b> <b>HA</b> queue and send a <b>persistent</b> message and then you just fire and forget? Sounds crazy, but its not. You might have done the above to make sure you don't lose a lot of messages, but you don't want the performance impact of waiting for any form of acknowledgment. You're essentially accepting a few failures when you lose a rabbit that is the <b>master</b>&nbsp;for any of your queues.</div></div><div><br /></div><div><b>Transactions: </b>To use RabbitMQ transactions you do a <b>txSelect </b>on your channel. Then when you publish a message you call <b>txCommit </b>which won't return until your message has been accepted by all of the master and all of the queues slaves. If you message is <b>persistent</b>&nbsp;then that means it is on the disk of them all, you're safe! What's not to like? The speed! Every <b>persistent</b>&nbsp;message that is published in a <b>transaction</b> results in an fsync to disk. You need a compromise you say?<b>&nbsp;</b></div><div><b><br /></b></div><div><b>Publisher confirms: </b>So you don't want to lose your messages and you want to speed things up. Then you can enable <b>publish confirms</b>&nbsp;on your <b>channel</b>. RabbitMQ will then send you a confirmation when the message has made it to disk on all the rabbits but it won't do it right away, it will flush things to disk in batches. You can either block periodically or set up a listener to get notified. Then you can put logic in your publisher to do retries etc. You might even write logic to limit the number of published messages that haven't been confirmed. But wait, isn't queueing meant to be easy?</div><div><br /></div><h4>Consuming from a HA queue</h4><div><br />Okay, so you have your message on the queue - how do you consume it? This is simpler:</div><div><ul><li><b>Auto-ack</b>: As soon as a message is delivered RabbitMQ discards it</li><li><b>Ack</b>: Your consumer has to manually ack each message</li></ul><div>If your consumer crashes and disconnects from Rabbit then the message will be re-queued. However if you have a bug and you just don't ack it, then Rabbit will keep a hold of it until you disconnect, then it will be re-queued. I bet that leads to some interesting bugs!<br /><br /></div></div><h4>So what could go wrong?</h4><br />This sounds peachy, you don't care about performance so you have a <b>durable</b> <b>HA</b> queue with <b>persistent </b>messages and are using <b>transactions</b> for producing and&nbsp;<b>acks</b> when consuming, you guaranteed <b>exactly once delivery</b> right? Well, no. Imagine your consumer crashes having consumed the message but just before sending the ack? Rabbit will re-send the message to another consumer.<br /><br />HA queueing is hard!<br /><br /><h4>Conclusion&nbsp;</h4><div><br />There is no magic bullet, you really need to understand the software you use for HA queueing. It is complicated and I didn't even cover topics like network partitions. Rabbit is a great piece of software and its automatic failover is really great but every notch you add on (transactions etc) will degrade your performance significantly.</div><div><br /></div><div><br /></div><br />
+RabbiqMQ is a AMQP broker with an interesting set of HA abilities. Do a little research and your head will start spinning working out the differences between making messages persistent, or queues durable, or was it durable messages and HA queues with transactions? Hopefully the following is all the information you need in one place.
+<br/><br/>Before evaluating them you need to define your requirements.<br/><br/>
+<ul>
+    <li>Do you want queues to survive broker failures?&nbsp;</li>
+    <li>Do you want unconsumed messages to survive a broker failure?</li>
+    <li>What matters more, publisher speed, or the above? Or do you want a nice compromise?</li>
+</ul><br/>RabbitMQ allows you to:<br/><br/>
+<ul>
+    <li>Make a <b>cluster</b> of Rabbits where clients can communicate with any node in the cluster</li>
+    <li>Make a queue <b>durable</b>, meaning the queue definition itself will survive broker failure</li>
+    <li>Make a message <b>persistent</b>, meaning that it will get stored to disk, which you do by setting a message's
+        <b>delivery_mode</b></li>
+    <li>Make a queue <b>HA</b>, meaning its contents will be replicated across brokers, either a specified list, all of
+        them or a number of them&nbsp;</li>
+    <li>Even an&nbsp;<b>HA </b>queue<b>&nbsp;</b>has a single <b>master</b> that handles all operations on that queue
+        even if the client is connected to a different node in the cluster, the <b>master</b>&nbsp;sends information to
+        the replicas, these are called <b>slaves</b></li>
+</ul>
+<div>Okay so you have a <b>durable</b> queue that is <b>HA</b> and you're using&nbsp;<b>persistent</b> messages (you
+    really want it all!). How do you work with the queue correctly?
+</div>
+<div><br/></div><h4>Producing to an HA queue</h4>
+<div><br/></div>
+<div>You have three options for publishing to a HA queue:</div>
+<div>
+    <ul>
+        <li>Accept the defaults, the publish will return with no guarantees in the result of broker failure</li>
+        <li><b>Publisher confirms</b></li>
+        <li><b>Transactions</b></li>
+    </ul>
+    <div><b>The defaults</b>: You went to all that effort of making a <b>durable</b> <b>HA</b> queue and send a <b>persistent</b>
+        message and then you just fire and forget? Sounds crazy, but its not. You might have done the above to make sure
+        you don't lose a lot of messages, but you don't want the performance impact of waiting for any form of
+        acknowledgment. You're essentially accepting a few failures when you lose a rabbit that is the <b>master</b>&nbsp;for
+        any of your queues.
+    </div>
+</div>
+<div><br/></div>
+<div><b>Transactions: </b>To use RabbitMQ transactions you do a <b>txSelect </b>on your channel. Then when you publish a
+    message you call <b>txCommit </b>which won't return until your message has been accepted by all of the master and
+    all of the queues slaves. If you message is <b>persistent</b>&nbsp;then that means it is on the disk of them all,
+    you're safe! What's not to like? The speed! Every <b>persistent</b>&nbsp;message that is published in a <b>transaction</b>
+    results in an fsync to disk. You need a compromise you say?<b>&nbsp;</b></div>
+<div><b><br/></b></div>
+<div><b>Publisher confirms: </b>So you don't want to lose your messages and you want to speed things up. Then you can
+    enable <b>publish confirms</b>&nbsp;on your <b>channel</b>. RabbitMQ will then send you a confirmation when the
+    message has made it to disk on all the rabbits but it won't do it right away, it will flush things to disk in
+    batches. You can either block periodically or set up a listener to get notified. Then you can put logic in your
+    publisher to do retries etc. You might even write logic to limit the number of published messages that haven't been
+    confirmed. But wait, isn't queueing meant to be easy?
+</div>
+<div><br/></div><h4>Consuming from a HA queue</h4>
+<div><br/>Okay, so you have your message on the queue - how do you consume it? This is simpler:</div>
+<div>
+    <ul>
+        <li><b>Auto-ack</b>: As soon as a message is delivered RabbitMQ discards it</li>
+        <li><b>Ack</b>: Your consumer has to manually ack each message</li>
+    </ul>
+    <div>If your consumer crashes and disconnects from Rabbit then the message will be re-queued. However if you have a
+        bug and you just don't ack it, then Rabbit will keep a hold of it until you disconnect, then it will be
+        re-queued. I bet that leads to some interesting bugs!<br/><br/></div>
+</div><h4>So what could go wrong?</h4><br/>This sounds peachy, you don't care about performance so you have a
+<b>durable</b> <b>HA</b> queue with <b>persistent </b>messages and are using <b>transactions</b> for producing and&nbsp;
+<b>acks</b> when consuming, you guaranteed <b>exactly once
+    delivery</b> right? Well, no. Imagine your consumer crashes having consumed the message but just before sending the ack? Rabbit will re-send the message to another consumer.
+<br/><br/>HA queueing is hard!<br/><br/><h4>Conclusion&nbsp;</h4>
+<div><br/>There is no magic bullet, you really need to understand the software you use for HA queueing. It is
+    complicated and I didn't even cover topics like network partitions. Rabbit is a great piece of software and its
+    automatic failover is really great but every notch you add on (transactions etc) will degrade your performance
+    significantly.
+</div>
+<div><br/></div>
+<div><br/></div><br/>

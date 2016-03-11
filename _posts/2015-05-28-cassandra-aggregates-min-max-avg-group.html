@@ -12,4 +12,88 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-35369997023097451
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/05/cassandra-aggregates-min-max-avg-group.html
 ---
 
-Disclaimer: all this was against 2.2-beta so the syntax may have changed.<br /><br />Cassandra 2.2 introduced user defined functions and user defined aggregates. We can now do things like min, max and average on the server rather than having to bring all the data back to your application. Max and min are built in but we'll see how you could have implemented them your self.<br /><br /><h3>Max/Min</h3><br />Here's an example table for us to try and implement max/min against.<br /><br /><script src="https://gist.github.com/chbatey/2a6edaba343a05462443.js"></script> <br />User defined aggregates work by calling your user defined function on every row returned from your query, they differ from a function because the first value to the function is state that is passed between rows, much like a fold.<br /><br />Creating an aggregate is a two or three step process: <br /><ol><li>Create a function that takes in state (any Cassandra type including collections) as the first parameter and any number of additional parameters</li><li>(Optionally) Create a final function that is called after the state function has been called on every row</li><li>Refer to these in an aggregate</li></ol><div>For max we don't need a final function but we will for average later.<br /><br /></div><script src="https://gist.github.com/chbatey/c40482646ab899d8117e.js"></script> <br /><div>Here we're using Java for the language (you can also use JavaScript) and just using Math.max. For our aggregate definition we start with (INITCOND) null (so it will return null for an empty table) and then set the state to be the max of the current state and the value passed in. We can our new aggregate like:</div><div><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-VKd6RMjtcQA/VWbRZ6o62-I/AAAAAAAAAdA/0UnX5k0Y2KQ/s1600/Screenshot%2B2015-05-28%2B09.26.58.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="320" src="http://1.bp.blogspot.com/-VKd6RMjtcQA/VWbRZ6o62-I/AAAAAAAAAdA/0UnX5k0Y2KQ/s320/Screenshot%2B2015-05-28%2B09.26.58.png" width="289" /></a></div><br /><h3>GroupBy</h3><div><br />So there's no group by keyword in Cassandra but you can get similar behaviour with a custom user defined aggregate. Imagine you had a table that kept track of everything your customers did e.g</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-LZYVDVkwufw/VWbSgNo-08I/AAAAAAAAAdM/FLwyURC0jSw/s1600/Screenshot%2B2015-05-28%2B09.31.41.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="115" src="http://1.bp.blogspot.com/-LZYVDVkwufw/VWbSgNo-08I/AAAAAAAAAdM/FLwyURC0jSw/s400/Screenshot%2B2015-05-28%2B09.31.41.png" width="400" /></a></div><div><br /></div><div><br /></div><div>We can write a UDA to get a count of a particular column:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/55e559408f6016bd72db.js"></script></div><div><br /></div><div>And we keep track of the counts in a map. Example use for counting both the event_type and the origin of the event:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-Uah1EN4gZi0/VWbYlD6g35I/AAAAAAAAAdc/eieqTkIgP3c/s1600/Screenshot%2B2015-05-28%2B09.57.34.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="278" src="http://1.bp.blogspot.com/-Uah1EN4gZi0/VWbYlD6g35I/AAAAAAAAAdc/eieqTkIgP3c/s400/Screenshot%2B2015-05-28%2B09.57.34.png" width="400" /></a></div><br />More often than not when you use group by in other databases you are totalling another field. For example imagine we were keeping track of customer purchases and wanted a total amount each customer has spent:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-Pq7LakxGrUc/VWbZK5EFEAI/AAAAAAAAAdk/vEhiwCmtU_g/s1600/Screenshot%2B2015-05-28%2B10.00.20.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="157" src="http://3.bp.blogspot.com/-Pq7LakxGrUc/VWbZK5EFEAI/AAAAAAAAAdk/vEhiwCmtU_g/s400/Screenshot%2B2015-05-28%2B10.00.20.png" width="400" /></a></div><br /><br />We can create a generate aggregate for that called group_and_total:<br /><br /><script src="https://gist.github.com/chbatey/709ce9dcebd12a0f8820.js"></script></div><br />And an example usage:  <br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-DcY_EDG1wuk/VWbZtKkYtZI/AAAAAAAAAds/MnoGycal3Ac/s1600/Screenshot%2B2015-05-28%2B10.02.34.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="221" src="http://1.bp.blogspot.com/-DcY_EDG1wuk/VWbZtKkYtZI/AAAAAAAAAds/MnoGycal3Ac/s400/Screenshot%2B2015-05-28%2B10.02.34.png" width="400" /></a></div><br /><h3></h3>As you can see Haddad spends way too much.<br /><br /><h3>Average</h3><div><br />The Cassandra docs have an example of how to use a user defined aggregate to calculate aggregates:&nbsp;http://cassandra.apache.org/doc/cql3/CQL-2.2.html#udas<br /><br /></div></div><div><h3>Small print</h3></div><div><br />If you've ever heard me rant about distributed databases you've probably heard me talk about scalable queries, ones that work on a 3 node cluster as well as a 1000 node cluster. User defined functions and aggregates are executed on the coordinator. So if you don't include a partition key in your query all the results are brought back to the coordinator for your function to be executed, if you do a full table scan for your UDF/A don't expect it to be fast if your table is huge.</div><div><br /></div><div>This functionality is in beta for a very good reason, it is user defined code running in your database! Proper sandboxing e.g with a SecurityManager will be added before this goes mainstream.</div><div><br /></div><br /><br /><br />
+Disclaimer: all this was against 2.2-beta so the syntax may have changed.<br/>
+<br/>Cassandra 2.2 introduced user defined functions and user defined aggregates. We can now do things like min, max and average on the server rather than having to bring all the data back to your application. Max and min are built in but we'll see how you could have implemented them your self.
+<br/><br/><h3>Max/Min</h3><br/>Here's an example table for us to try and implement max/min against.<br/><br/>
+<script src="https://gist.github.com/chbatey/2a6edaba343a05462443.js"></script>
+<br/>User defined aggregates work by calling your user defined function on every row returned from your query, they differ from a function because the first value to the function is state that is passed between rows, much like a fold.
+<br/><br/>Creating an aggregate is a two or three step process: <br/>
+<ol>
+    <li>Create a function that takes in state (any Cassandra type including collections) as the first parameter and any
+        number of additional parameters
+    </li>
+    <li>(Optionally) Create a final function that is called after the state function has been called on every row</li>
+    <li>Refer to these in an aggregate</li>
+</ol>
+<div>For max we don't need a final function but we will for average later.<br/><br/></div>
+<script src="https://gist.github.com/chbatey/c40482646ab899d8117e.js"></script> <br/>
+<div>Here we're using Java for the language (you can also use JavaScript) and just using Math.max. For our aggregate
+    definition we start with (INITCOND) null (so it will return null for an empty table) and then set the state to be
+    the max of the current state and the value passed in. We can our new aggregate like:
+</div>
+<div><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-VKd6RMjtcQA/VWbRZ6o62-I/AAAAAAAAAdA/0UnX5k0Y2KQ/s1600/Screenshot%2B2015-05-28%2B09.26.58.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="320"
+                                                                              src="http://1.bp.blogspot.com/-VKd6RMjtcQA/VWbRZ6o62-I/AAAAAAAAAdA/0UnX5k0Y2KQ/s320/Screenshot%2B2015-05-28%2B09.26.58.png"
+                                                                              width="289"/></a></div>
+    <br/>
+    <h3>GroupBy</h3>
+    <div><br/>So there's no group by keyword in Cassandra but you can get similar behaviour with a custom user defined
+        aggregate. Imagine you had a table that kept track of everything your customers did e.g
+    </div>
+    <div><br/></div>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-LZYVDVkwufw/VWbSgNo-08I/AAAAAAAAAdM/FLwyURC0jSw/s1600/Screenshot%2B2015-05-28%2B09.31.41.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="115"
+                                                                              src="http://1.bp.blogspot.com/-LZYVDVkwufw/VWbSgNo-08I/AAAAAAAAAdM/FLwyURC0jSw/s400/Screenshot%2B2015-05-28%2B09.31.41.png"
+                                                                              width="400"/></a></div>
+    <div><br/></div>
+    <div><br/></div>
+    <div>We can write a UDA to get a count of a particular column:</div>
+    <div><br/></div>
+    <div>
+        <script src="https://gist.github.com/chbatey/55e559408f6016bd72db.js"></script>
+    </div>
+    <div><br/></div>
+    <div>And we keep track of the counts in a map. Example use for counting both the event_type and the origin of the
+        event:<br/><br/>
+        <div class="separator" style="clear: both; text-align: center;"><a
+                href="http://1.bp.blogspot.com/-Uah1EN4gZi0/VWbYlD6g35I/AAAAAAAAAdc/eieqTkIgP3c/s1600/Screenshot%2B2015-05-28%2B09.57.34.png"
+                imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="278"
+                                                                                  src="http://1.bp.blogspot.com/-Uah1EN4gZi0/VWbYlD6g35I/AAAAAAAAAdc/eieqTkIgP3c/s400/Screenshot%2B2015-05-28%2B09.57.34.png"
+                                                                                  width="400"/></a></div>
+        <br/>More often than not when you use group by in other databases you are totalling another field. For example
+        imagine we were keeping track of customer purchases and wanted a total amount each customer has spent:<br/><br/>
+        <div class="separator" style="clear: both; text-align: center;"><a
+                href="http://3.bp.blogspot.com/-Pq7LakxGrUc/VWbZK5EFEAI/AAAAAAAAAdk/vEhiwCmtU_g/s1600/Screenshot%2B2015-05-28%2B10.00.20.png"
+                imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="157"
+                                                                                  src="http://3.bp.blogspot.com/-Pq7LakxGrUc/VWbZK5EFEAI/AAAAAAAAAdk/vEhiwCmtU_g/s400/Screenshot%2B2015-05-28%2B10.00.20.png"
+                                                                                  width="400"/></a></div>
+        <br/><br/>We can create a generate aggregate for that called group_and_total:<br/><br/>
+        <script src="https://gist.github.com/chbatey/709ce9dcebd12a0f8820.js"></script>
+    </div>
+    <br/>And an example usage: <br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-DcY_EDG1wuk/VWbZtKkYtZI/AAAAAAAAAds/MnoGycal3Ac/s1600/Screenshot%2B2015-05-28%2B10.02.34.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="221"
+                                                                              src="http://1.bp.blogspot.com/-DcY_EDG1wuk/VWbZtKkYtZI/AAAAAAAAAds/MnoGycal3Ac/s400/Screenshot%2B2015-05-28%2B10.02.34.png"
+                                                                              width="400"/></a></div>
+    <br/>
+    <h3></h3>As you can see Haddad spends way too much.<br/><br/>
+    <h3>Average</h3>
+    <div><br/>The Cassandra docs have an example of how to use a user defined aggregate to calculate aggregates:&nbsp;http://cassandra.apache.org/doc/cql3/CQL-2.2.html#udas<br/><br/>
+    </div>
+</div>
+<div><h3>Small print</h3></div>
+<div><br/>If you've ever heard me rant about distributed databases you've probably heard me talk about scalable queries,
+    ones that work on a 3 node cluster as well as a 1000 node cluster. User defined functions and aggregates are
+    executed on the coordinator. So if you don't include a partition key in your query all the results are brought back
+    to the coordinator for your function to be executed, if you do a full table scan for your UDF/A don't expect it to
+    be fast if your table is huge.
+</div>
+<div><br/></div>
+<div>This functionality is in beta for a very good reason, it is user defined code running in your database! Proper
+    sandboxing e.g with a SecurityManager will be added before this goes mainstream.
+</div>
+<div><br/></div><br/><br/><br/>

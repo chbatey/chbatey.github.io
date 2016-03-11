@@ -3,10 +3,98 @@ layout: post
 title: Mocking Iterable objects generically with Mockito
 date: '2013-06-01T04:35:00.001-07:00'
 author: Christopher Batey
-tags: 
+tags:
 modified_time: '2013-06-01T04:35:14.074-07:00'
 blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-8747551588777779841
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/06/mocking-iterable-objects-generically.html
 ---
 
-<br /><div class="p1">I often find my self having to mock iterable objects. At times I've created a test stub that overrides the iterator method and stubs the iterator, other times I have used mockito to mock the iterator.&nbsp;</div><div class="p2"><br /></div><div class="p1">Most recently it was the Cassandra Datastax Java Driver's ResultSet object (which doesn't implement an interface and has a private constructor so you can't extend it and override or create an alternative implementation) which motivated me to create a generic method.&nbsp;</div><div class="p2"><br /></div><div class="p1">So basically I want this code to work but with aSetOfStrings is a mock. You probably won't be mocking collections but it'll give you the idea.</div><div class="p1">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">Set&lt;String&gt; aSetOfStrings = // passed in some how</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp;&nbsp; &nbsp; &nbsp; for (String s : aSetOfStrings) {</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; results.add(s);</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;}</span></div><div class="p2"><br /></div><div class="p1">And the method for creating the mock iterable object needs to be generic. E.g:</div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;public static &lt;T&gt; void mockIterable(Iterable&lt;T&gt; iterable, T... values)</span></div><div class="p2"><br /></div><div class="p1">Where the first parameter is the mock iterable object and the var arg is the objects that it should return.<span class="Apple-tab-span">&nbsp;</span></div><div class="p2"><br /></div><div class="p1">The foreach loop internally uses two methods on the iterator returned by the set's iterator() method: hasNext() and next().</div><div class="p2"><br /></div><div class="p1">So to get it to work three methods need to be mocked:</div><div class="p1"></div><ol><li>Mock the iterable's (the set) iterator() method to return a mock iterator</li><li>Mock the iterator's hasNext() method to return true N times followed by false where N is the number of values that you want the iterator to return.</li><li>Mock the iterator's next() method to return the N elements in order.</li></ol><div class="p1">Using mockito number one is easy:</div><div class="p1"></div><div class="p1">&nbsp; &nbsp; &nbsp; &nbsp;<span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"> Iterator&lt;T&gt; mockIterator = mock(Iterator.class);</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;when(iterable.iterator()).thenReturn(mockIterator);</span></div><div class="p1"><br /></div><div class="p1">Number two and three are slightly more complicated. Mockito lets you pass in a vararg for what to return. The slight complication is that the signature is:</div><div class="p1">&nbsp; &nbsp; &nbsp; &nbsp; <span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">thenReturn(T, T...)</span></div><div class="p1"><br /></div><div class="p1">This is to enforce that at least one element is passed in. This means that for the hasNext() we need to pass in true N times followed by a false but the first true needs to be passed in separately rather then in the vararg. The same applies for next() - we can't simply use the vararg passed into our mockIterable(..) method we need to build a new array with N-1 elements in. This can be done as follows:</div><div class="p1"><br /><ol><li>If no values are passed in all we need to do is mock hasNext() to false.</li><li>If a single value is passed in we don't need to build an array to pass into thenReturn.</li><li>Finally, for more than one value we need to build the correct boolean array and values array to pass into thenReturn. For example:</li></ol></div><div class="p1"><span style="font-family: 'Courier New', Courier, monospace; font-size: xx-small;">MockIterator.mockIterable(mockIterable, "one", "two", "three");</span></div><div class="p1"><br /></div><div class="p1">We'd need the following mocking calls:</div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; when(mockIterable.hasNext()).thenReturn(true, [true, true, false])&nbsp;</span></div><div class="p1">and</div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; when(mockIterable.next()).thenReturn("one", ["two", "three"])</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br /></span></div><div class="p1">And here is the code to do it:</div><div class="p1"><script src="https://gist.github.com/chbatey/5690062.js"></script></div><div class="p1">And the full code along with unit tests and a gradle script to build + pull in the dependencies is <a href="https://github.com/chbatey/mockito-iterator" target="_blank">here</a>.</div><div class="p1"><br /></div><div class="p1"><span style="font-family: inherit;"><br /></span></div><div class="p1"><span style="font-family: inherit;"><br /></span></div><br />
+<br/>
+<div class="p1">I often find my self having to mock iterable objects. At times I've created a test stub that overrides
+    the iterator method and stubs the iterator, other times I have used mockito to mock the iterator.&nbsp;</div>
+<div class="p2"><br/></div>
+<div class="p1">Most recently it was the Cassandra Datastax Java Driver's ResultSet object (which doesn't implement an
+    interface and has a private constructor so you can't extend it and override or create an alternative implementation)
+    which motivated me to create a generic method.&nbsp;</div>
+<div class="p2"><br/></div>
+<div class="p1">So basically I want this code to work but with aSetOfStrings is a mock. You probably won't be mocking
+    collections but it'll give you the idea.
+</div>
+<div class="p1">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">Set&lt;String&gt; aSetOfStrings = // passed in some how</span>
+</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp;&nbsp; &nbsp; &nbsp; for (String s : aSetOfStrings) {</span>
+</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; results.add(s);</span>
+</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;}</span>
+</div>
+<div class="p2"><br/></div>
+<div class="p1">And the method for creating the mock iterable object needs to be generic. E.g:</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;public static &lt;T&gt; void mockIterable(Iterable&lt;T&gt; iterable, T... values)</span>
+</div>
+<div class="p2"><br/></div>
+<div class="p1">Where the first parameter is the mock iterable object and the var arg is the objects that it should
+    return.<span class="Apple-tab-span">&nbsp;</span></div>
+<div class="p2"><br/></div>
+<div class="p1">The foreach loop internally uses two methods on the iterator returned by the set's iterator() method:
+    hasNext() and next().
+</div>
+<div class="p2"><br/></div>
+<div class="p1">So to get it to work three methods need to be mocked:</div>
+<div class="p1"></div>
+<ol>
+    <li>Mock the iterable's (the set) iterator() method to return a mock iterator</li>
+    <li>Mock the iterator's hasNext() method to return true N times followed by false where N is the number of values
+        that you want the iterator to return.
+    </li>
+    <li>Mock the iterator's next() method to return the N elements in order.</li>
+</ol>
+<div class="p1">Using mockito number one is easy:</div>
+<div class="p1"></div>
+<div class="p1">&nbsp; &nbsp; &nbsp; &nbsp;<span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;"> Iterator&lt;T&gt; mockIterator = mock(Iterator.class);</span>
+</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp;when(iterable.iterator()).thenReturn(mockIterator);</span>
+</div>
+<div class="p1"><br/></div>
+<div class="p1">Number two and three are slightly more complicated. Mockito lets you pass in a vararg for what to
+    return. The slight complication is that the signature is:
+</div>
+<div class="p1">&nbsp; &nbsp; &nbsp; &nbsp; <span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">thenReturn(T, T...)</span></div>
+<div class="p1"><br/></div>
+<div class="p1">This is to enforce that at least one element is passed in. This means that for the hasNext() we need to
+    pass in true N times followed by a false but the first true needs to be passed in separately rather then in the
+    vararg. The same applies for next() - we can't simply use the vararg passed into our mockIterable(..) method we need
+    to build a new array with N-1 elements in. This can be done as follows:
+</div>
+<div class="p1"><br/>
+    <ol>
+        <li>If no values are passed in all we need to do is mock hasNext() to false.</li>
+        <li>If a single value is passed in we don't need to build an array to pass into thenReturn.</li>
+        <li>Finally, for more than one value we need to build the correct boolean array and values array to pass into
+            thenReturn. For example:
+        </li>
+    </ol>
+</div>
+<div class="p1"><span style="font-family: 'Courier New', Courier, monospace; font-size: xx-small;">MockIterator.mockIterable(mockIterable, "one", "two", "three");</span>
+</div>
+<div class="p1"><br/></div>
+<div class="p1">We'd need the following mocking calls:</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; when(mockIterable.hasNext()).thenReturn(true, [true, true, false])&nbsp;</span>
+</div>
+<div class="p1">and</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">&nbsp; &nbsp; &nbsp; &nbsp; when(mockIterable.next()).thenReturn("one", ["two", "three"])</span>
+</div>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><br/></span></div>
+<div class="p1">And here is the code to do it:</div>
+<div class="p1">
+    <script src="https://gist.github.com/chbatey/5690062.js"></script>
+</div>
+<div class="p1">And the full code along with unit tests and a gradle script to build + pull in the dependencies is <a
+        href="https://github.com/chbatey/mockito-iterator" target="_blank">here</a>.
+</div>
+<div class="p1"><br/></div>
+<div class="p1"><span style="font-family: inherit;"><br/></span></div>
+<div class="p1"><span style="font-family: inherit;"><br/></span></div><br/>

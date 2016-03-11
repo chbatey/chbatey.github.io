@@ -12,4 +12,57 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-70291746053227165
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/08/getting-started-with-hystrix-and.html
 ---
 
-Applications are becoming increasingly distributed. Micro service architecture is the new rage. This means that each application you develop has more and more "integration points".<br /><br />Any time you make a call to another service or database, or use any third party library that is a black box to you, it can be thought of as an integration point.<br /><br />Netflix's architecture gives a great example of how to deal with integration points. They have a popular open-source library called Hystrix which allows you to isolate integration points by executing all calls in its own worker queue and thread pool.<br /><br />Yammer have integrated Hystrix with Dropwizard, enabling enhancement of applications to publish metrics and accept configuration updates.<br /><br /><a href="https://github.com/chbatey/integration-points-example" target="_blank">Here</a> is an example application that calls out to three HTTP services and collects the results together into a single response.<br /><ul></ul><div>Rather then calling into a HTTP library on the thread provided by Jetty this application uses Yammer's Hystrix wrapper, <a href="https://github.com/yammer/tenacity" target="_blank">Tenacity</a>.</div><div><br /></div><div>Let's look at one of the integration points:<br /><br /></div><script src="https://gist.github.com/chbatey/04e85612da87421f8db7.js"></script> <br />Here we extend the TenacityCommand class and call the dependency in the run() method. Typically all this code would be in another class with the TenacityCommand just being a wrapper, but this is a self-contained example. Let's explain what it is doing:<br /><ul><li>Making an HTTP call using the Apache HTTP client</li><li>If it fails throw a Runtime exception</li></ul><div>By instantiating this TenacityCommand and calling execute(), your code is automagically executed on its very own thread pool, and requests are queued on its very own work queue. What benefits do you get?</div><div><ul><li>You get a guaranteed timeout, so no more relying on library's read timeout that never seems to work in production</li><li>You get a circuit breaker that opens if a configured % of calls fail, meaning you can fail fast and throttle calls to failing dependencies</li><li>You get endpoints that show the configuration and whether a circuit breaker is open</li></ul></div><div><br /></div><div>If the call to run() fails, times out or the circuit breaker is open Tenacity will call the optional getFallback() method, so you can provide a fallback strategy rather than failing completely.&nbsp;</div><div><br /></div><div>Another hidden benefit is how easy it is to move to a more asynchronous style of programming. Let's look at the resource class that pulls together the three dependencies:</div><div><br /></div><div></div><script src="https://gist.github.com/chbatey/a97e044827aab9163f65.js"></script> Let's ignore the fact we are calling out to other HTTP services from a resource layer. The above code shows how to use Tenacity synchronously. Apart from the advantages you gain regarding failures, all the calls are still happening one by one as we call execute() which blocks so we don't call the second dependency until the first one has finished.<br /><br />However, this doesn't have to be the case. Now you've snuck Tenacity into your code base you can change the code to something like this:<br /><br /><script src="https://gist.github.com/chbatey/3d762d7cc368379fdcd8.js"></script> And without your colleagues realising you've made all of your calls to your dependencies execute asynchronously and (possibly) at the same time, then you block to bring them all together at the end.<br /><br />We've barely scratched the surface of Hystrix and Tenacity but hopefully you can already see the benefits. All the code for this example a long with instructions on how to use wiremock to mock the dependencies is <a href="https://github.com/chbatey/integration-points-example" target="_blank">here</a>.
+Applications are becoming increasingly distributed. Micro service architecture is the new rage. This means that each application you develop has more and more "integration points".
+<br/>
+<br/>Any time you make a call to another service or database, or use any third party library that is a black box to you, it can be thought of as an integration point.
+<br/>
+<br/>Netflix's architecture gives a great example of how to deal with integration points. They have a popular open-source library called Hystrix which allows you to isolate integration points by executing all calls in its own worker queue and thread pool.
+<br/>
+<br/>Yammer have integrated Hystrix with Dropwizard, enabling enhancement of applications to publish metrics and accept configuration updates.
+<br/><br/><a href="https://github.com/chbatey/integration-points-example"
+             target="_blank">Here</a> is an example application that calls out to three HTTP services and collects the results together into a single response.
+<br/>
+<ul></ul>
+<div>Rather then calling into a HTTP library on the thread provided by Jetty this application uses Yammer's Hystrix
+    wrapper, <a href="https://github.com/yammer/tenacity" target="_blank">Tenacity</a>.
+</div>
+<div><br/></div>
+<div>Let's look at one of the integration points:<br/><br/></div>
+<script src="https://gist.github.com/chbatey/04e85612da87421f8db7.js"></script>
+<br/>Here we extend the TenacityCommand class and call the dependency in the run() method. Typically all this code would be in another class with the TenacityCommand just being a wrapper, but this is a self-contained example. Let's explain what it is doing:
+<br/>
+<ul>
+    <li>Making an HTTP call using the Apache HTTP client</li>
+    <li>If it fails throw a Runtime exception</li>
+</ul>
+<div>By instantiating this TenacityCommand and calling execute(), your code is automagically executed on its very own
+    thread pool, and requests are queued on its very own work queue. What benefits do you get?
+</div>
+<div>
+    <ul>
+        <li>You get a guaranteed timeout, so no more relying on library's read timeout that never seems to work in
+            production
+        </li>
+        <li>You get a circuit breaker that opens if a configured % of calls fail, meaning you can fail fast and throttle
+            calls to failing dependencies
+        </li>
+        <li>You get endpoints that show the configuration and whether a circuit breaker is open</li>
+    </ul>
+</div>
+<div><br/></div>
+<div>If the call to run() fails, times out or the circuit breaker is open Tenacity will call the optional getFallback()
+    method, so you can provide a fallback strategy rather than failing completely.&nbsp;</div>
+<div><br/></div>
+<div>Another hidden benefit is how easy it is to move to a more asynchronous style of programming. Let's look at the
+    resource class that pulls together the three dependencies:
+</div>
+<div><br/></div>
+<div></div>
+<script src="https://gist.github.com/chbatey/a97e044827aab9163f65.js"></script> Let's ignore the fact we are calling out to other HTTP services from a resource layer. The above code shows how to use Tenacity synchronously. Apart from the advantages you gain regarding failures, all the calls are still happening one by one as we call execute() which blocks so we don't call the second dependency until the first one has finished.
+<br/>
+<br/>However, this doesn't have to be the case. Now you've snuck Tenacity into your code base you can change the code to something like this:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/3d762d7cc368379fdcd8.js"></script> And without your colleagues realising you've made all of your calls to your dependencies execute asynchronously and (possibly) at the same time, then you block to bring them all together at the end.
+<br/>
+<br/>We've barely scratched the surface of Hystrix and Tenacity but hopefully you can already see the benefits. All the code for this example a long with instructions on how to use wiremock to mock the dependencies is
+<a href="https://github.com/chbatey/integration-points-example" target="_blank">here</a>.

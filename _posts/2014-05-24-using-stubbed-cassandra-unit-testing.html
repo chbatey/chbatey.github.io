@@ -14,4 +14,117 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-76223616635029034
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/05/using-stubbed-cassandra-unit-testing.html
 ---
 
-My first article on <a href="http://christopher-batey.blogspot.co.uk/2014/05/introducing-scassandra-testing.html">Scassandra</a> introduced what it is and why I've made it.<br /><br />This article describes how to use <a href="http://www.scassandra.org/" target="_blank">Scassanda</a> to help unit test a Java class that stores and retrieves data from Cassandra.<br /><br />It assumes you're using a tool that can download dependencies from maven central e.g Maven, Gradle or SBT.<br /><br />First add Scassandra as a dependency. It is in maven central so you can add it to your pom with the following xml:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&lt;dependency&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;groupId&gt;org.scassandra&lt;/groupId&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;artifactId&gt;java-client&lt;/artifactId&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;version&gt;0.2.1&lt;/version&gt;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&lt;/dependency&gt;</span><br /><br />Or the following entry in your build.gradle:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">dependencies {</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; compile('org.scassandra:java-client:0.2.1')</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">}</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span><span style="font-family: inherit;">There are four important classes you'll deal with from Java:</span><br /><ul><li><b>ScassandraFactory</b> - used to create instances of Scassandra</li><li><b>Scassandra</b> - interface for starting/stopping Scassandra and getting hold of a PrimingClient and an ActivityClient</li><li><b>PrimingClient</b> - sends priming requests to Scassandra RESTful admin interface</li><li><b>ActivityClient</b> - retrieves all the recorded queries and prepared statements from the Scassandra RESTful admin interface</li></ul><br /><span style="font-family: inherit;">The <b>PrimingClient</b> and <b>ActivityClient</b> have been created to ease integration for Java developers. Otherwise you would need to construct JSON and send it over HTTP to Scassandra.</span><br /><span style="font-family: inherit;"><br /></span><span style="font-family: inherit;">You can start a Scassandra instance per unit test and clear all primes and recorded activity between tests.</span><br /><span style="font-family: inherit;"><br /></span>To start Scassandra before your test starts add a BeforeClass e.g:<br /><br /><br /><script src="https://gist.github.com/chbatey/17dfd09489374da31d65.js"></script> You can also add a AfterClass to close Scassandra down: <br /><br /><script src="https://gist.github.com/chbatey/1bf65d60a7453cb3f104.js"></script> Now that you have Scassandra running lets write a test. Perhaps you want to test a simple Java DAO that connects to Cassandra and executes a query.<br /><br /><script src="https://gist.github.com/chbatey/61809a41712a7a22fb6c.js"></script> And you have a backing table like: <br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">CREATE TABLE person (</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; id int,</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; first_name text,</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; PRIMARY KEY (id)</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">)</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span>Lets TDD the DAO using Scassandra starting with our connect method:<br /><br /><script src="https://gist.github.com/chbatey/5213145f7006bb545b05.js"></script> Lets look at what this code is doing:<br /><ul><li>Line 4: Informs the activity client to clear all recorded connections. This is to stop other tests that have caused connections interfering with this one.&nbsp;</li><li>Line 6: We call on connect on our PersonDao.</li><li>Line 8: We call retrieveConnections on the activity client and expect there to be at least one. The Java Datastax driver makes multiple connections on startup so you can't assert for this to be 1.</li></ul><div>This fails with the following message:</div><br /><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">java.lang.AssertionError: Expected at least one connection to Cassandra on connect</span></div><div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span" style="white-space: pre;"> </span>at org.junit.Assert.fail(Assert.java:88)</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span" style="white-space: pre;"> </span>at org.junit.Assert.assertTrue(Assert.java:41)</span></div><div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span" style="white-space: pre;"> </span>at com.batey.examples.scassandra.PersonDaoTest.shouldConnectToCassandraWhenConnectCalled(PersonDaoTest.java:94)</span></div></div><br />Now lets write some code to make it pass:<br /><br /><script src="https://gist.github.com/chbatey/6b18a8ed2faa7d7bf923.js"></script> Now lets test the retrieveNames function gets all the first_names out of the person table. <br /><br /><script src="https://gist.github.com/chbatey/41bd01e3cf0d168c69ef.js"></script> This will prime Scassandra to return a single row with the column first_name with the value Chris. We expect our DAO to turn that into a List of strings containing Chris. To make this pass we need to execute a query and convert the ResultSet, something like this:<br /><br /><script src="https://gist.github.com/chbatey/9e92fae13ae340784412.js"></script> Next lets say you have the requirement that you really must not get an out of date list of names. So you want to test that the consistency you do the query is QUORUM. You can test this like this: <br /><br /><script src="https://gist.github.com/chbatey/2b87b6b54e8e6ba0cb89.js"></script>Lets look at what each line is doing: <br /><ul><li>Line 4 builds the expected query, note the consistency is also set. If you build a Query without a consistency it defaults to ONE.</li><li>Line 7 clears all the recorded activity so that another test does not interfere with this one. It also clears the queries that were executed as part of connect (the Datastax Java driver issues quite a few queries on the system keyspace on startup)</li><li>Line 11 retrieves all the queries your application has execited</li><li>Line 12 verifies the expected query that was built on Line 4 has been executed</li></ul><br />This will fail with an error message like this:<br /><br /><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">java.lang.AssertionError: Expected query with consistency QUORUM, found following queries: [ {Query{query='select * from people', consistency='ONE'}] </span><br /><br />We can make this pass by adding the consistency to our query:<br /><br /><script src="https://gist.github.com/chbatey/56723c53d23e893a5d78.js"></script> And we're done!<br /><br />This has been a brief instruction to Scassandra but hopefully the above gives you an idea of how Scassandra can be used to test your Java applications that use Cassandra. We've covered: <br /><ul><li>Priming basic queries</li><li>Verifying queries</li><li>Verifying connections</li></ul><div>Future blog posts will show you how to:</div><div><ul><li>Prime prepared statements</li><li>Prime different column types in responses</li><li>Prime error cases</li></ul><div>Scassandra has only just been released. The future road map includes:</div><div><ul><li>JUnit rule so you don't need to handle starting/stopping and clearing recorded activity</li><li>More generic priming e.g any query on this table</li><li>Support for more drivers</li></ul></div><div>All the code for this example can be found in full <a href="https://github.com/chbatey/scassandra-example-java" target="_blank">here</a>.</div></div>
+My first article on <a href="http://christopher-batey.blogspot.co.uk/2014/05/introducing-scassandra-testing.html">Scassandra</a> introduced what it is and why I've made it.
+<br/><br/>This article describes how to use <a href="http://www.scassandra.org/"
+                                               target="_blank">Scassanda</a> to help unit test a Java class that stores and retrieves data from Cassandra.
+<br/><br/>It assumes you're using a tool that can download dependencies from maven central e.g Maven, Gradle or SBT.
+<br/>
+<br/>First add Scassandra as a dependency. It is in maven central so you can add it to your pom with the following xml:
+<br/><br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&lt;dependency&gt;</span><br/>
+<span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;groupId&gt;org.scassandra&lt;/groupId&gt;</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;artifactId&gt;java-client&lt;/artifactId&gt;</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &lt;version&gt;0.2.1&lt;/version&gt;</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&lt;/dependency&gt;</span><br/>
+<br/>Or the following entry in your build.gradle:<br/><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;">dependencies {</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; compile('org.scassandra:java-client:0.2.1')</span>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">}</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span><span
+        style="font-family: inherit;">There are four important classes you'll deal with from Java:</span><br/>
+<ul>
+    <li><b>ScassandraFactory</b> - used to create instances of Scassandra</li>
+    <li><b>Scassandra</b> - interface for starting/stopping Scassandra and getting hold of a PrimingClient and an
+        ActivityClient
+    </li>
+    <li><b>PrimingClient</b> - sends priming requests to Scassandra RESTful admin interface</li>
+    <li><b>ActivityClient</b> - retrieves all the recorded queries and prepared statements from the Scassandra RESTful
+        admin interface
+    </li>
+</ul><br/><span style="font-family: inherit;">The <b>PrimingClient</b> and <b>ActivityClient</b> have been created to ease integration for Java developers. Otherwise you would need to construct JSON and send it over HTTP to Scassandra.</span>
+<br/><span style="font-family: inherit;"><br/></span><span style="font-family: inherit;">You can start a Scassandra instance per unit test and clear all primes and recorded activity between tests.</span>
+<br/><span style="font-family: inherit;"><br/></span>To start Scassandra before your test starts add a BeforeClass e.g:
+<br/><br/><br/>
+<script src="https://gist.github.com/chbatey/17dfd09489374da31d65.js"></script> You can also add a AfterClass to close Scassandra down:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/1bf65d60a7453cb3f104.js"></script> Now that you have Scassandra running lets write a test. Perhaps you want to test a simple Java DAO that connects to Cassandra and executes a query.
+<br/><br/>
+<script src="https://gist.github.com/chbatey/61809a41712a7a22fb6c.js"></script> And you have a backing table like: <br/>
+<br/><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">CREATE TABLE person (</span><br/>
+<span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; id int,</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; first_name text,</span><br/>
+<span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; PRIMARY KEY (id)</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;">)</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span>Lets TDD the DAO using Scassandra starting with our connect method:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/5213145f7006bb545b05.js"></script> Lets look at what this code is doing:
+<br/>
+<ul>
+    <li>Line 4: Informs the activity client to clear all recorded connections. This is to stop other tests that have
+        caused connections interfering with this one.&nbsp;</li>
+    <li>Line 6: We call on connect on our PersonDao.</li>
+    <li>Line 8: We call retrieveConnections on the activity client and expect there to be at least one. The Java
+        Datastax driver makes multiple connections on startup so you can't assert for this to be 1.
+    </li>
+</ul>
+<div>This fails with the following message:</div><br/>
+<div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;">java.lang.AssertionError: Expected at least one connection to Cassandra on connect</span>
+</div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span"
+                                                                                                style="white-space: pre;"> </span>at org.junit.Assert.fail(Assert.java:88)</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span"
+                                                                                                style="white-space: pre;"> </span>at org.junit.Assert.assertTrue(Assert.java:41)</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace; font-size: xx-small;"><span class="Apple-tab-span"
+                                                                                                style="white-space: pre;"> </span>at com.batey.examples.scassandra.PersonDaoTest.shouldConnectToCassandraWhenConnectCalled(PersonDaoTest.java:94)</span>
+    </div>
+</div><br/>Now lets write some code to make it pass:<br/><br/>
+<script src="https://gist.github.com/chbatey/6b18a8ed2faa7d7bf923.js"></script> Now lets test the retrieveNames function gets all the first_names out of the person table.
+<br/><br/>
+<script src="https://gist.github.com/chbatey/41bd01e3cf0d168c69ef.js"></script> This will prime Scassandra to return a single row with the column first_name with the value Chris. We expect our DAO to turn that into a List of strings containing Chris. To make this pass we need to execute a query and convert the ResultSet, something like this:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/9e92fae13ae340784412.js"></script> Next lets say you have the requirement that you really must not get an out of date list of names. So you want to test that the consistency you do the query is QUORUM. You can test this like this:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/2b87b6b54e8e6ba0cb89.js"></script>Lets look at what each line is doing:
+<br/>
+<ul>
+    <li>Line 4 builds the expected query, note the consistency is also set. If you build a Query without a consistency
+        it defaults to ONE.
+    </li>
+    <li>Line 7 clears all the recorded activity so that another test does not interfere with this one. It also clears
+        the queries that were executed as part of connect (the Datastax Java driver issues quite a few queries on the
+        system keyspace on startup)
+    </li>
+    <li>Line 11 retrieves all the queries your application has execited</li>
+    <li>Line 12 verifies the expected query that was built on Line 4 has been executed</li>
+</ul><br/>This will fail with an error message like this:<br/><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: xx-small;">java.lang.AssertionError: Expected query with consistency QUORUM, found following queries: [ {Query{query='select * from people', consistency='ONE'}] </span>
+<br/><br/>We can make this pass by adding the consistency to our query:<br/><br/>
+<script src="https://gist.github.com/chbatey/56723c53d23e893a5d78.js"></script> And we're done!<br/>
+<br/>This has been a brief instruction to Scassandra but hopefully the above gives you an idea of how Scassandra can be used to test your Java applications that use Cassandra. We've covered:
+<br/>
+<ul>
+    <li>Priming basic queries</li>
+    <li>Verifying queries</li>
+    <li>Verifying connections</li>
+</ul>
+<div>Future blog posts will show you how to:</div>
+<div>
+    <ul>
+        <li>Prime prepared statements</li>
+        <li>Prime different column types in responses</li>
+        <li>Prime error cases</li>
+    </ul>
+    <div>Scassandra has only just been released. The future road map includes:</div>
+    <div>
+        <ul>
+            <li>JUnit rule so you don't need to handle starting/stopping and clearing recorded activity</li>
+            <li>More generic priming e.g any query on this table</li>
+            <li>Support for more drivers</li>
+        </ul>
+    </div>
+    <div>All the code for this example can be found in full <a href="https://github.com/chbatey/scassandra-example-java"
+                                                               target="_blank">here</a>.
+    </div>
+</div>

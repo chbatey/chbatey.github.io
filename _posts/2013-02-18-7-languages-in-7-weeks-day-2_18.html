@@ -11,4 +11,91 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-32568516943956397
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/02/7-languages-in-7-weeks-day-2_18.html
 ---
 
-<br /><h3>Day 2: Floating Down from the sky</h3><div><br />On day 2 we're introduced to code blocks, arrays, hashes and mixins. The more I see code blocks in other languages the more I am looking forward to Java 8.&nbsp;Coming from Java I get particulary jealous of languages with syntaxctic sugar for arrays and hashes; initialising them in Java is cumbersome.</div><h4>Self-Study</h4>1) Print the contents of an array 4 elements at a time:<br /><br />Sticking to the verbose solution for now:<br /><br /><br /><span style="font-family: Courier New, Courier, monospace;">array = Array(1..16)</span><br /><span style="font-family: Courier New, Courier, monospace;"><br /></span><span style="font-family: Courier New, Courier, monospace;">array.each do |x|</span><br /><span style="font-family: Courier New, Courier, monospace;">&nbsp; if (x % 4 == 0)&nbsp;</span><br /><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; print "#{x}\n"</span><br /><span style="font-family: Courier New, Courier, monospace;">&nbsp; else</span><br /><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; print "#{x},"</span><br /><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span><br /><span style="font-family: Courier New, Courier, monospace;">end</span><br /><div><br /></div><div>Now with slice:</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace;">irb(main):014:0&gt; array = Array(1..16)</span></div><div><span style="font-family: Courier New, Courier, monospace;">=&gt; [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]</span></div><div><span style="font-family: Courier New, Courier, monospace;">irb(main):015:0&gt; array.each_slice(4) { &nbsp;|slice| puts slice.join(",") }</span></div><div><span style="font-family: Courier New, Courier, monospace;">1,2,3,4</span></div><div><span style="font-family: Courier New, Courier, monospace;">5,6,7,8</span></div><div><span style="font-family: Courier New, Courier, monospace;">9,10,11,12</span></div><div><span style="font-family: Courier New, Courier, monospace;">13,14,15,16</span></div></div><div><br /></div><div>2) Tree with a nice constructor:</div><div><br /></div><div>After finishing this I found a nicer solution with collect, but here is my original:</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace;">class Tree</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; attr_accessor :children, :node_name</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize( fullTree={})</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @children = []</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @node_name = fullTree.keys.first</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; fullTree[@node_name].each do |key,value|&nbsp;</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; children.push(Tree.new( {key=&gt;value} ))</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp;&nbsp;</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def visit_all(&amp;block)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; visit &amp;block</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; children.each{ |c| c.visit_all &amp;block }</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def visit(&amp;block)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; block.call self</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">ruby_tree = Tree.new({ 'grandad' =&gt; { 'dad' =&gt; { 'child 1' =&gt; {} &nbsp; }, 'uncle' &nbsp; =&gt; {} &nbsp;} })</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">ruby_tree.visit_all { |t| puts t.node_name &nbsp;}</span></div></div><div><br /></div><div>3) Ruby grep!</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace;">pattern = Regexp.new(ARGV[0])</span></div><div><span style="font-family: Courier New, Courier, monospace;">file = File.new(ARGV[1], "r")</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">counter = 0</span></div><div><span style="font-family: Courier New, Courier, monospace;">file.each_line do |line|</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; if line.match(pattern)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; puts "#{counter}: #{line}"</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; counter = counter + 1</span></div><div><span style="font-family: Courier New, Courier, monospace;">end</span></div></div><div><br /></div><div>Day 3 to come some time this week hopefully!</div>
+<br/><h3>Day 2: Floating Down from the sky</h3>
+<div><br/>On day 2 we're introduced to code blocks, arrays, hashes and mixins. The more I see code blocks in other
+    languages the more I am looking forward to Java 8.&nbsp;Coming from Java I get particulary jealous of languages with
+    syntaxctic sugar for arrays and hashes; initialising them in Java is cumbersome.
+</div><h4>Self-Study</h4>1) Print the contents of an array 4 elements at a time:<br/>
+<br/>Sticking to the verbose solution for now:<br/><br/><br/><span
+        style="font-family: Courier New, Courier, monospace;">array = Array(1..16)</span><br/><span
+        style="font-family: Courier New, Courier, monospace;"><br/></span><span
+        style="font-family: Courier New, Courier, monospace;">array.each do |x|</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">&nbsp; if (x % 4 == 0)&nbsp;</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; print "#{x}\n"</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">&nbsp; else</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; print "#{x},"</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">&nbsp; end</span><br/><span
+        style="font-family: Courier New, Courier, monospace;">end</span><br/>
+<div><br/></div>
+<div>Now with slice:</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace;">irb(main):014:0&gt; array = Array(1..16)</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">=&gt; [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">irb(main):015:0&gt; array.each_slice(4) { &nbsp;|slice| puts slice.join(",") }</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">1,2,3,4</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">5,6,7,8</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">9,10,11,12</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">13,14,15,16</span></div>
+</div>
+<div><br/></div>
+<div>2) Tree with a nice constructor:</div>
+<div><br/></div>
+<div>After finishing this I found a nicer solution with collect, but here is my original:</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace;">class Tree</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; attr_accessor :children, :node_name</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize( fullTree={})</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @children = []</span></div>
+    <div><span
+            style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @node_name = fullTree.keys.first</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; fullTree[@node_name].each do |key,value|&nbsp;</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; children.push(Tree.new( {key=&gt;value} ))</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp;&nbsp;</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def visit_all(&amp;block)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; visit &amp;block</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; children.each{ |c| c.visit_all &amp;block }</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def visit(&amp;block)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; block.call self</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">ruby_tree = Tree.new({ 'grandad' =&gt; { 'dad' =&gt; { 'child 1' =&gt; {} &nbsp; }, 'uncle' &nbsp; =&gt; {} &nbsp;} })</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span
+            style="font-family: Courier New, Courier, monospace;">ruby_tree.visit_all { |t| puts t.node_name &nbsp;}</span>
+    </div>
+</div>
+<div><br/></div>
+<div>3) Ruby grep!</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace;">pattern = Regexp.new(ARGV[0])</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">file = File.new(ARGV[1], "r")</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">counter = 0</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">file.each_line do |line|</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; if line.match(pattern)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; puts "#{counter}: #{line}"</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; counter = counter + 1</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">end</span></div>
+</div>
+<div><br/></div>
+<div>Day 3 to come some time this week hopefully!</div>

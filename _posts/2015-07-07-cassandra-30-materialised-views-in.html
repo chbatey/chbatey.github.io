@@ -11,4 +11,149 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-15746106445166157
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/07/cassandra-30-materialised-views-in.html
 ---
 
-Disclaimer: C* 3.0 is not released yet and all these examples are from a <a href="https://github.com/carlyeks/cassandra/tree/ticket/6477-8099">branch</a> that hasn't even made it to trunk yet.<br /><br />So this feature started off as "<a href="https://issues.apache.org/jira/browse/CASSANDRA-6477">Global indexes</a>", the final result is not a global index and I don't trust any claim of distributed indexes anyhow. If your data is spread across 200 machines, ad-hoc queries aren't a good idea reagardless of how you implement them as you will often end up going to all 200 machines.<br /><br />Instead materialised views make a copy of your data partitioned a different way, which is basically what we've been doing manually in C* for years, this feature aims to remove the heavy lifting.<br /><br />I'll use the same data model as the last article which is from the KillrWeather application. I will attempt to show use cases which we'd have previously used Spark or duplicated our data manually.<br /><br />Recall the main data table:<br /><br /><script src="https://gist.github.com/chbatey/f24608e26085fe4f08fe.js"></script> This table assumes our queries are all going to be isolated to a weather station id (wsid) as it is the partition key. The KillrWeather application also has a table with information about each weather station:<br /><br /><script src="https://gist.github.com/chbatey/326a1170bd365a28302c.js"></script> I am going to denormalise by adding the columns from the weather_station table directly in the raw_weather_data table ending up with:<br /><br /><script src="https://gist.github.com/chbatey/bd36ef3ffc71031513e0.js"></script> Now can we do some awesome things with materialised views? Of course we can!<br /><br />So imagine you need to read the data not by weather station ID but by state_code. We'd normally have to write more code to duplicate the data manually. Not any more.<br /><div><br /></div><div>First let's insert some data, I've only inserted the primary key columns and one_hour_precip and I may have used UK county names rather than states :)</div><div><br /></div><div><script src="https://gist.github.com/chbatey/a218f6d916f52476428d.js"></script></div><div><br /></div><div>We can of course query by weather id and time e.g</div><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-J8_WBTP3jiM/VZuPT9OI-yI/AAAAAAAAAgc/ZsFgTbBGMWk/s1600/Screenshot%2B2015-07-07%2B09.34.29.png" imageanchor="1" style="clear: left; float: left; margin-bottom: 1em; margin-right: 1em;"><img border="0" height="96" src="http://3.bp.blogspot.com/-J8_WBTP3jiM/VZuPT9OI-yI/AAAAAAAAAgc/ZsFgTbBGMWk/s640/Screenshot%2B2015-07-07%2B09.34.29.png" width="640" /></a></div><div><br /></div><div><br /></div><div>We can then create a view:<br /><br /><script src="https://gist.github.com/chbatey/378bb5481739fb7ee475.js"></script></div><div><br /></div><div>We've asked C* is to materialise <span style="font-family: Courier New, Courier, monospace;">select country_code from raw_weather_data</span> but with a different partition key, how awesome is that?? All of the original primary key columns and any columns in your new primary key are automatically added and I've added country_code for no good reason.<br /><br />With that we can query by state and year as well. I included year as I assumed that partitioning by state would lead to very large partitions in the view table.<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-PXbG8HG2Ves/VZvDkl-V6yI/AAAAAAAAAhM/gV31b_J2htY/s1600/Screenshot%2B2015-07-07%2B13.18.08.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="122" src="http://3.bp.blogspot.com/-PXbG8HG2Ves/VZvDkl-V6yI/AAAAAAAAAhM/gV31b_J2htY/s640/Screenshot%2B2015-07-07%2B13.18.08.png" width="640" /></a></div><br /><div class="separator" style="clear: both; text-align: center;"></div><div class="separator" style="clear: both; text-align: center;"></div><br /></div><div>Where as secondary indexes go to the original table, which will often result in a multi partition query (a C* anti-pattern), a materialised view is copy of your data partitioned in a new way. This query will be as quick as if you'd duplicated the data your self.<br /><br />The big take away here is that YOU, the developer, decide the partitioning of the materialised view. This is an important point. There was talk of you only needing to specify a cardinality, e.g low, medium, high or unique and leave C* to decide the partitioning. Where as that would have appeared more user friendly it would be a new concept and a layer of abstraction when IMO it is critical all C* developers/ops understand the importance of partitioning and we already do it every day for tables. You can now use all that knowledge you already have to design good primary keys for views.<br /><br /><h3>The fine print</h3><br />I'll use the term "original primary key" to refer to the table we're creating a materialised view on and MV primary key for our new view.<br /><ol><li>You can include any part of the original primary key in your MV primary key and a single column that was not part of your original primary key</li><li>Any part of the original primary key you don't use will be added to the end of your clustering columns to keep it a one to one mapping</li><li>If the part of your primary key is NULL then it won't appear in the materialised view</li><li>There is overhead added to the write path for each materialised view</li></ol>Confused? Example time!</div><div><br /></div><div><b>Original primary key</b>: &nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour)</span></div><div><b>MV primary key</b>:&nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((state_code, year), one_hour_precip)</span></div><div><b>Conclusion:</b> No, this is actually the example above and it does not work as we tried to include two columns that weren't part of the original primary key. I updated the original primary key to:&nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour, state_code) </span>and then it worked.</div><div><br /></div><div><div><b>Original primary key</b>: &nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour)</span></div><div><b>MV primary key</b>:&nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((state_code, year))</span></div><div><b>Conclusion</b>:&nbsp;Yes - only one new column in the primary key: state_code</div></div><div><br /></div><div>Here are some of the other questions that came up:</div><div><ol><li>Is historic data put into the view on creation? Yes</li><li>Can the number of fields be limited in the new view? Yes - in the select clause</li><li>Is the view written to synchronously or asynchronously on the write path? <b>Very subject to change!</b>&nbsp;It's complicated! The view mutations are put in the batch log and sent out before the write, the write can succeed before all the view replicas have acknowledged the update but the batch log won't be cleared until a majority of them have responded. See the diagram in this <a href="http://www.datastax.com/dev/blog/new-in-cassandra-3-0-materialized-views">article</a>.</li><li>Are deletes reflected? Yes, yes they are!</li><li>Are updated reflected? Yes, yes they are!</li><li>What happens if I delete a table? The views are deleted</li><li>Can I update data via the view? No</li><li>What is the overhead? TBD, though it will be similar to using a logged batch if you had duplicated manually.</li><li>Will Patrick Mcfadin have to change all his data modelling talks? Well at least some of them</li></ol><h3>Combining aggregates and MVs? Oh yes</h3></div><div><br /></div><div>You can't use aggregates in the select clause for creating the materialised view but you can use them when querying the materialised view. So we can now answer questions like what is the total precipitation for a given year for a given state:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-i3ZnEsSBWEY/VZvFkcGp1lI/AAAAAAAAAhY/NB3s9w10V8c/s1600/Screenshot%2B2015-07-07%2B13.26.40.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="104" src="http://2.bp.blogspot.com/-i3ZnEsSBWEY/VZvFkcGp1lI/AAAAAAAAAhY/NB3s9w10V8c/s640/Screenshot%2B2015-07-07%2B13.26.40.png" width="640" /></a></div><br /><div class="separator" style="clear: both; text-align: center;"></div><div class="separator" style="clear: both; text-align: center;"></div><br />We can change our view to include the month in its key and do the same for monthly:<br /><br /><script src="https://gist.github.com/chbatey/0e39fd9601e3fd50916f.js"></script> And then we can do:<br /><br /><div class="separator" style="clear: both; text-align: center;"></div><div class="separator" style="clear: both; text-align: center;"></div><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-kofHQiMX69A/VZvG8Fn6A-I/AAAAAAAAAho/_5e1L6F1vfw/s1600/Screenshot%2B2015-07-07%2B13.32.20.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="198" src="http://1.bp.blogspot.com/-kofHQiMX69A/VZvG8Fn6A-I/AAAAAAAAAho/_5e1L6F1vfw/s640/Screenshot%2B2015-07-07%2B13.32.20.png" width="640" /></a></div><br /><br />Though my data had all the rain in one month :)<br /><br /><h3>Conclusion</h3></div><div><br /></div><div>This feature changes no key concepts for C* data modelling it simply makes the implementation of the intended data model vastly easier. If you have data set that doesn't fit on a single server you're still denormalising and duplicating for performance and scalability, C* will just do a huge amount of it for you in 3.0.</div>
+Disclaimer: C* 3.0 is not released yet and all these examples are from a <a
+        href="https://github.com/carlyeks/cassandra/tree/ticket/6477-8099">branch</a> that hasn't even made it to trunk yet.
+<br/><br/>So this feature started off as "<a href="https://issues.apache.org/jira/browse/CASSANDRA-6477">Global
+    indexes</a>", the final result is not a global index and I don't trust any claim of distributed indexes anyhow. If your data is spread across 200 machines, ad-hoc queries aren't a good idea reagardless of how you implement them as you will often end up going to all 200 machines.
+<br/>
+<br/>Instead materialised views make a copy of your data partitioned a different way, which is basically what we've been doing manually in C* for years, this feature aims to remove the heavy lifting.
+<br/>
+<br/>I'll use the same data model as the last article which is from the KillrWeather application. I will attempt to show use cases which we'd have previously used Spark or duplicated our data manually.
+<br/><br/>Recall the main data table:<br/><br/>
+<script src="https://gist.github.com/chbatey/f24608e26085fe4f08fe.js"></script> This table assumes our queries are all going to be isolated to a weather station id (wsid) as it is the partition key. The KillrWeather application also has a table with information about each weather station:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/326a1170bd365a28302c.js"></script> I am going to denormalise by adding the columns from the weather_station table directly in the raw_weather_data table ending up with:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/bd36ef3ffc71031513e0.js"></script> Now can we do some awesome things with materialised views? Of course we can!
+<br/>
+<br/>So imagine you need to read the data not by weather station ID but by state_code. We'd normally have to write more code to duplicate the data manually. Not any more.
+<br/>
+<div><br/></div>
+<div>First let's insert some data, I've only inserted the primary key columns and one_hour_precip and I may have used UK
+    county names rather than states :)
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/a218f6d916f52476428d.js"></script>
+</div>
+<div><br/></div>
+<div>We can of course query by weather id and time e.g</div>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://3.bp.blogspot.com/-J8_WBTP3jiM/VZuPT9OI-yI/AAAAAAAAAgc/ZsFgTbBGMWk/s1600/Screenshot%2B2015-07-07%2B09.34.29.png"
+        imageanchor="1" style="clear: left; float: left; margin-bottom: 1em; margin-right: 1em;"><img border="0"
+                                                                                                      height="96"
+                                                                                                      src="http://3.bp.blogspot.com/-J8_WBTP3jiM/VZuPT9OI-yI/AAAAAAAAAgc/ZsFgTbBGMWk/s640/Screenshot%2B2015-07-07%2B09.34.29.png"
+                                                                                                      width="640"/></a>
+</div>
+<div><br/></div>
+<div><br/></div>
+<div>We can then create a view:<br/><br/>
+    <script src="https://gist.github.com/chbatey/378bb5481739fb7ee475.js"></script>
+</div>
+<div><br/></div>
+<div>We've asked C* is to materialise <span style="font-family: Courier New, Courier, monospace;">select country_code from raw_weather_data</span>
+    but with a different partition key, how awesome is that?? All of the original primary key columns and any columns in
+    your new primary key are automatically added and I've added country_code for no good reason.<br/><br/>With that we
+    can query by state and year as well. I included year as I assumed that partitioning by state would lead to very
+    large partitions in the view table.<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://3.bp.blogspot.com/-PXbG8HG2Ves/VZvDkl-V6yI/AAAAAAAAAhM/gV31b_J2htY/s1600/Screenshot%2B2015-07-07%2B13.18.08.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="122"
+                                                                              src="http://3.bp.blogspot.com/-PXbG8HG2Ves/VZvDkl-V6yI/AAAAAAAAAhM/gV31b_J2htY/s640/Screenshot%2B2015-07-07%2B13.18.08.png"
+                                                                              width="640"/></a></div>
+    <br/>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <br/></div>
+<div>Where as secondary indexes go to the original table, which will often result in a multi partition query (a C*
+    anti-pattern), a materialised view is copy of your data partitioned in a new way. This query will be as quick as if
+    you'd duplicated the data your self.<br/><br/>The big take away here is that YOU, the developer, decide the
+    partitioning of the materialised view. This is an important point. There was talk of you only needing to specify a
+    cardinality, e.g low, medium, high or unique and leave C* to decide the partitioning. Where as that would have
+    appeared more user friendly it would be a new concept and a layer of abstraction when IMO it is critical all C*
+    developers/ops understand the importance of partitioning and we already do it every day for tables. You can now use
+    all that knowledge you already have to design good primary keys for views.<br/><br/>
+    <h3>The fine print</h3><br/>I'll use the term "original primary key" to refer to the table we're creating a
+    materialised view on and MV primary key for our new view.<br/>
+    <ol>
+        <li>You can include any part of the original primary key in your MV primary key and a single column that was not
+            part of your original primary key
+        </li>
+        <li>Any part of the original primary key you don't use will be added to the end of your clustering columns to
+            keep it a one to one mapping
+        </li>
+        <li>If the part of your primary key is NULL then it won't appear in the materialised view</li>
+        <li>There is overhead added to the write path for each materialised view</li>
+    </ol>
+    Confused? Example time!
+</div>
+<div><br/></div>
+<div><b>Original primary key</b>: &nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour)</span>
+</div>
+<div><b>MV primary key</b>:&nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((state_code, year), one_hour_precip)</span>
+</div>
+<div><b>Conclusion:</b> No, this is actually the example above and it does not work as we tried to include two columns
+    that weren't part of the original primary key. I updated the original primary key to:&nbsp;<span
+            style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour, state_code) </span>and
+    then it worked.
+</div>
+<div><br/></div>
+<div>
+    <div><b>Original primary key</b>: &nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((wsid), year, month, day, hour)</span>
+    </div>
+    <div><b>MV primary key</b>:&nbsp;<span style="font-family: Courier New, Courier, monospace;">PRIMARY KEY ((state_code, year))</span>
+    </div>
+    <div><b>Conclusion</b>:&nbsp;Yes - only one new column in the primary key: state_code</div>
+</div>
+<div><br/></div>
+<div>Here are some of the other questions that came up:</div>
+<div>
+    <ol>
+        <li>Is historic data put into the view on creation? Yes</li>
+        <li>Can the number of fields be limited in the new view? Yes - in the select clause</li>
+        <li>Is the view written to synchronously or asynchronously on the write path? <b>Very subject to change!</b>&nbsp;It's
+            complicated! The view mutations are put in the batch log and sent out before the write, the write can
+            succeed before all the view replicas have acknowledged the update but the batch log won't be cleared until a
+            majority of them have responded. See the diagram in this <a
+                    href="http://www.datastax.com/dev/blog/new-in-cassandra-3-0-materialized-views">article</a>.
+        </li>
+        <li>Are deletes reflected? Yes, yes they are!</li>
+        <li>Are updated reflected? Yes, yes they are!</li>
+        <li>What happens if I delete a table? The views are deleted</li>
+        <li>Can I update data via the view? No</li>
+        <li>What is the overhead? TBD, though it will be similar to using a logged batch if you had duplicated
+            manually.
+        </li>
+        <li>Will Patrick Mcfadin have to change all his data modelling talks? Well at least some of them</li>
+    </ol>
+    <h3>Combining aggregates and MVs? Oh yes</h3></div>
+<div><br/></div>
+<div>You can't use aggregates in the select clause for creating the materialised view but you can use them when querying
+    the materialised view. So we can now answer questions like what is the total precipitation for a given year for a
+    given state:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://2.bp.blogspot.com/-i3ZnEsSBWEY/VZvFkcGp1lI/AAAAAAAAAhY/NB3s9w10V8c/s1600/Screenshot%2B2015-07-07%2B13.26.40.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="104"
+                                                                              src="http://2.bp.blogspot.com/-i3ZnEsSBWEY/VZvFkcGp1lI/AAAAAAAAAhY/NB3s9w10V8c/s640/Screenshot%2B2015-07-07%2B13.26.40.png"
+                                                                              width="640"/></a></div>
+    <br/>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <br/>We can change our view to include the month in its key and do the same for monthly:<br/><br/>
+    <script src="https://gist.github.com/chbatey/0e39fd9601e3fd50916f.js"></script>
+    And then we can do:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <div class="separator" style="clear: both; text-align: center;"></div>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-kofHQiMX69A/VZvG8Fn6A-I/AAAAAAAAAho/_5e1L6F1vfw/s1600/Screenshot%2B2015-07-07%2B13.32.20.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" height="198"
+                                                                              src="http://1.bp.blogspot.com/-kofHQiMX69A/VZvG8Fn6A-I/AAAAAAAAAho/_5e1L6F1vfw/s640/Screenshot%2B2015-07-07%2B13.32.20.png"
+                                                                              width="640"/></a></div>
+    <br/><br/>Though my data had all the rain in one month :)<br/><br/>
+    <h3>Conclusion</h3></div>
+<div><br/></div>
+<div>This feature changes no key concepts for C* data modelling it simply makes the implementation of the intended data
+    model vastly easier. If you have data set that doesn't fit on a single server you're still denormalising and
+    duplicating for performance and scalability, C* will just do a huge amount of it for you in 3.0.
+</div>

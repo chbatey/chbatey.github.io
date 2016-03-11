@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Streaming large payloads over HTTP from Cassandra with a small Heap: Java
-  Driver + RX-Java'
+Driver + RX-Java'
 date: '2014-12-08T07:51:00.001-08:00'
 author: Christopher Batey
 tags:
@@ -15,4 +15,98 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-30302532639598416
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/12/streaming-large-payloads-over-http-from.html
 ---
 
-Cassandra's normal use case is vast number of small read and write operations distributed equally across the cluster.<br /><br />However every so often you need to extract a large quantity of data in a single query. For example, say you are storing customer events that you normally query in small slices, however once a day you want to extract all of them for a particular customer. For customers with a lot of events than this could be many hundreds of megabytes of data.<br /><br />If you want to write a Java application that executes this query against a version of Cassandra prior to 2.0 then you may run into some issues. Let us look at the first one..<br /><br /><h4>Coordinator out of memory:</h4><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-xPLj6C-xH54/VIW44MAf71I/AAAAAAAAAUY/9dNkVRJIfO8/s1600/CoordinatorOutOfMemory.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://4.bp.blogspot.com/-xPLj6C-xH54/VIW44MAf71I/AAAAAAAAAUY/9dNkVRJIfO8/s1600/CoordinatorOutOfMemory.png" height="167" width="400" /></a></div><br />Previous versions of Cassandra used to bring all of the rows back to the coordinator before sending them to your application, so if the result is too large for the coordinator's heap it would run out of memory.<br /><br />Let's say you had just enough memory in the coordinator for the result, then you ran the risk of...<br /><br /><h4>Application out of memory:</h4><div><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-uteWf5zhwAk/VIW6NhIifdI/AAAAAAAAAUk/2dUSlbX7Jcw/s1600/AppOutOfMemory.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://1.bp.blogspot.com/-uteWf5zhwAk/VIW6NhIifdI/AAAAAAAAAUk/2dUSlbX7Jcw/s1600/AppOutOfMemory.png" height="158" width="400" /></a></div><div><br /></div><div><br /></div><div>To get around this you had to implement your own paging, where you split the query into many small queries and processed them in batches. This can be achieved by limiting the results and issuing the next query after the last result of the previous query.</div><div><br /></div><div>If your application was streaming the results over HTTP then the architecture could look something like this:</div><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-2x54JBEZY64/VIW7WEeuD4I/AAAAAAAAAUw/qdIJp5NgWms/s1600/ArchitectureForExtract.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://4.bp.blogspot.com/-2x54JBEZY64/VIW7WEeuD4I/AAAAAAAAAUw/qdIJp5NgWms/s1600/ArchitectureForExtract.png" height="166" width="400" /></a></div><div><br /></div><div><br /></div><div>Here we place some kind of queue, say an ArrayBlockingQueue if using Java, between the thread executing the queries and the thread streaming it out over HTTP. If the queue fills up the DAO thread is blocked, meaning that it won't bring any more rows from Cassandra. If the DAO gets behind the WEB thread (perhaps a tomcat thread) blocks waiting to get more rows out of the queue. This works very nicely with the JAX-RS StreamingOutput.<br /><br />This all sounds like a lot of hard work...</div><div><br /></div><div><h4>The 2.0+ solution</h4><div><br /></div>From version 2.0, Cassandra would no longer suffer from the coordinator out of memory. This is because the coordinator pages the response to the driver and doesn't bring the whole result into memory. However if your application reads the whole ResultSet into memory then your application running out of memory is still an issue.<br /><br />However the DataStax driver's ResultSet pages as well, which works really nicely with Rx-Java and JAX-RS StreamingOutput. Time go get real, let's take the following schema:<br /><br /><script src="https://gist.github.com/chbatey/902a5f2434013c899757.js"></script></div><div><br /></div>And you want to get all the events for a particular customer_id (the partition key). First let's write the DAO:<br /><br /><script src="https://gist.github.com/chbatey/288166148746ff815b10.js"></script> Let's go through this line by line:<br /><b><br /></b><b>2: </b>Async Execute of the query that will bring back more rows that will fit in memory.<br /><b>4: </b>Convert the ListenableFuture to an RxJava Observable. The Observable has a really nice callback interface / way to do transformation.<br /><b>5: </b>As ResultSet implements iterable we can flatMap it to Row!<br /><b>6: </b>Finally map the Row object to CustomerEvent object to prevent driver knowledge escaping the DAO.<br /><br />And then let's see the JAX-RS resource class: <br /><br /><script src="https://gist.github.com/chbatey/5b4ce80e1655741322d5.js"></script> Looks complicated but it really isn't, first a little about JAX-RS streaming.  <br /><br />The way JAX-RS works is we are given a StreamingOutput interface which we implement to get a hold of the raw OutputStream. The container e.g Tomcat or Jetty, will call the write method. It is our responsibility to keep the container's thread in that method until we have finished streaming. With that knowledge let's go through the code:<br /><br /><b>5:</b> Get the Observable&lt;CustomerEvent&gt; from the DAO.<br /><b>6:</b> Create a CountDownLatch which we'll use to block the container thread.<br /><b>7: </b>Register a callback to consume all the rows and write them to the output stream,<br /><b>12: </b>When the rows are finished, close the OutputStream.<br /><b>16: </b>Countdown the latch to release the container thread on line <b>33</b>.<br /><b>26:</b> Each time we get a CustomerEvent, write it to the OutputStream.<br /><b>33: </b>Await on the latch to keep the container thread blocked.<br /><b>39: </b>Return the StreamingOutput instance to the container so it can call write.<br /><br />Given that we're dealing with the rows from Cassandra asynchronously you didn't expect the code to be in order did you? ;)<br /><br />The full working example is on my <a href="https://github.com/chbatey/cassandra-customer-events-dropwizard" target="_blank">GitHub</a>. To test it all I put around 600mb of data in a Cassandra cluster for the same partition. There is a sample class in the test directory to do this.<br /><br />I then started the application with a MaxHeapSize of 256mb, then used curl to hit the events/stream endpoint:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-z0igxaTdE8k/VIXGg6PuYXI/AAAAAAAAAVA/9N4LCCC3zHc/s1600/Screenshot%2B2014-12-08%2B15.39.57.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://2.bp.blogspot.com/-z0igxaTdE8k/VIXGg6PuYXI/AAAAAAAAAVA/9N4LCCC3zHc/s1600/Screenshot%2B2014-12-08%2B15.39.57.png" height="180" width="400" /></a></div><br />As you can see 610M came back in 7 minutes. The whole time I had VisuamVM attached to the application and the coordinator and monitored the memory usage.<br /><br />Here's the graph from the application:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://4.bp.blogspot.com/-7DpoCfDbtI0/VIXGztqe22I/AAAAAAAAAVI/RAQEtBQ5AVc/s1600/AppMemory.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://4.bp.blogspot.com/-7DpoCfDbtI0/VIXGztqe22I/AAAAAAAAAVI/RAQEtBQ5AVc/s1600/AppMemory.png" height="235" width="400" /></a></div><div class="separator" style="clear: both; text-align: center;"><br /></div><div class="separator" style="clear: both; text-align: left;">The test was ran from 14:22 to 14:37. Even though we were pumping through 610M of data through the application the heap was gittering between 50m and 200m, easily able to reclaim the memory of the data we have streamed out.</div><br />For those new to Cassandra and other distributed databases this might not seem that spectacular, but I once wrote a rather large project to do what we can manage here in a few lines. Awesome work by the Apache Cassandra commitors and the DataStax Java driver team.<br /><br />
+Cassandra's normal use case is vast number of small read and write operations distributed equally across the cluster.
+<br/>
+<br/>However every so often you need to extract a large quantity of data in a single query. For example, say you are storing customer events that you normally query in small slices, however once a day you want to extract all of them for a particular customer. For customers with a lot of events than this could be many hundreds of megabytes of data.
+<br/>
+<br/>If you want to write a Java application that executes this query against a version of Cassandra prior to 2.0 then you may run into some issues. Let us look at the first one..
+<br/><br/><h4>Coordinator out of memory:</h4><br/>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://4.bp.blogspot.com/-xPLj6C-xH54/VIW44MAf71I/AAAAAAAAAUY/9dNkVRJIfO8/s1600/CoordinatorOutOfMemory.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://4.bp.blogspot.com/-xPLj6C-xH54/VIW44MAf71I/AAAAAAAAAUY/9dNkVRJIfO8/s1600/CoordinatorOutOfMemory.png"
+                                                                          height="167" width="400"/></a></div>
+<br/>Previous versions of Cassandra used to bring all of the rows back to the coordinator before sending them to your application, so if the result is too large for the coordinator's heap it would run out of memory.
+<br/><br/>Let's say you had just enough memory in the coordinator for the result, then you ran the risk of...<br/><br/>
+<h4>Application out of memory:</h4>
+<div><br/></div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://1.bp.blogspot.com/-uteWf5zhwAk/VIW6NhIifdI/AAAAAAAAAUk/2dUSlbX7Jcw/s1600/AppOutOfMemory.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://1.bp.blogspot.com/-uteWf5zhwAk/VIW6NhIifdI/AAAAAAAAAUk/2dUSlbX7Jcw/s1600/AppOutOfMemory.png"
+                                                                          height="158" width="400"/></a></div>
+<div><br/></div>
+<div><br/></div>
+<div>To get around this you had to implement your own paging, where you split the query into many small queries and
+    processed them in batches. This can be achieved by limiting the results and issuing the next query after the last
+    result of the previous query.
+</div>
+<div><br/></div>
+<div>If your application was streaming the results over HTTP then the architecture could look something like this:</div>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://4.bp.blogspot.com/-2x54JBEZY64/VIW7WEeuD4I/AAAAAAAAAUw/qdIJp5NgWms/s1600/ArchitectureForExtract.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://4.bp.blogspot.com/-2x54JBEZY64/VIW7WEeuD4I/AAAAAAAAAUw/qdIJp5NgWms/s1600/ArchitectureForExtract.png"
+                                                                          height="166" width="400"/></a></div>
+<div><br/></div>
+<div><br/></div>
+<div>Here we place some kind of queue, say an ArrayBlockingQueue if using Java, between the thread executing the queries
+    and the thread streaming it out over HTTP. If the queue fills up the DAO thread is blocked, meaning that it won't
+    bring any more rows from Cassandra. If the DAO gets behind the WEB thread (perhaps a tomcat thread) blocks waiting
+    to get more rows out of the queue. This works very nicely with the JAX-RS StreamingOutput.<br/><br/>This all sounds
+    like a lot of hard work...
+</div>
+<div><br/></div>
+<div><h4>The 2.0+ solution</h4>
+    <div><br/></div>
+    From version 2.0, Cassandra would no longer suffer from the coordinator out of memory. This is because the
+    coordinator pages the response to the driver and doesn't bring the whole result into memory. However if your
+    application reads the whole ResultSet into memory then your application running out of memory is still an
+    issue.<br/><br/>However the DataStax driver's ResultSet pages as well, which works really nicely with Rx-Java and
+    JAX-RS StreamingOutput. Time go get real, let's take the following schema:<br/><br/>
+    <script src="https://gist.github.com/chbatey/902a5f2434013c899757.js"></script>
+</div>
+<div><br/>
+</div>And you want to get all the events for a particular customer_id (the partition key). First let's write the DAO:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/288166148746ff815b10.js"></script> Let's go through this line by line:<br/>
+<b><br/></b><b>2: </b>Async Execute of the query that will bring back more rows that will fit in memory.<br/>
+<b>4: </b>Convert the ListenableFuture to an RxJava Observable. The Observable has a really nice callback interface / way to do transformation.
+<br/><b>5: </b>As ResultSet implements iterable we can flatMap it to Row!<br/>
+<b>6: </b>Finally map the Row object to CustomerEvent object to prevent driver knowledge escaping the DAO.<br/>
+<br/>And then let's see the JAX-RS resource class: <br/><br/>
+<script src="https://gist.github.com/chbatey/5b4ce80e1655741322d5.js"></script> Looks complicated but it really isn't, first a little about JAX-RS streaming.
+<br/>
+<br/>The way JAX-RS works is we are given a StreamingOutput interface which we implement to get a hold of the raw OutputStream. The container e.g Tomcat or Jetty, will call the write method. It is our responsibility to keep the container's thread in that method until we have finished streaming. With that knowledge let's go through the code:
+<br/><br/><b>5:</b> Get the Observable&lt;CustomerEvent&gt; from the DAO.<br/>
+<b>6:</b> Create a CountDownLatch which we'll use to block the container thread.<br/>
+<b>7: </b>Register a callback to consume all the rows and write them to the output stream,<br/>
+<b>12: </b>When the rows are finished, close the OutputStream.<br/>
+<b>16: </b>Countdown the latch to release the container thread on line <b>33</b>.<br/>
+<b>26:</b> Each time we get a CustomerEvent, write it to the OutputStream.<br/>
+<b>33: </b>Await on the latch to keep the container thread blocked.<br/>
+<b>39: </b>Return the StreamingOutput instance to the container so it can call write.<br/>
+<br/>Given that we're dealing with the rows from Cassandra asynchronously you didn't expect the code to be in order did you? ;)
+<br/><br/>The full working example is on my <a href="https://github.com/chbatey/cassandra-customer-events-dropwizard"
+                                               target="_blank">GitHub</a>. To test it all I put around 600mb of data in a Cassandra cluster for the same partition. There is a sample class in the test directory to do this.
+<br/><br/>I then started the application with a MaxHeapSize of 256mb, then used curl to hit the events/stream endpoint:
+<br/><br/>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://2.bp.blogspot.com/-z0igxaTdE8k/VIXGg6PuYXI/AAAAAAAAAVA/9N4LCCC3zHc/s1600/Screenshot%2B2014-12-08%2B15.39.57.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://2.bp.blogspot.com/-z0igxaTdE8k/VIXGg6PuYXI/AAAAAAAAAVA/9N4LCCC3zHc/s1600/Screenshot%2B2014-12-08%2B15.39.57.png"
+                                                                          height="180" width="400"/></a></div>
+<br/>As you can see 610M came back in 7 minutes. The whole time I had VisuamVM attached to the application and the coordinator and monitored the memory usage.
+<br/><br/>Here's the graph from the application:<br/><br/>
+<div class="separator" style="clear: both; text-align: center;"><a
+        href="http://4.bp.blogspot.com/-7DpoCfDbtI0/VIXGztqe22I/AAAAAAAAAVI/RAQEtBQ5AVc/s1600/AppMemory.png"
+        imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                          src="http://4.bp.blogspot.com/-7DpoCfDbtI0/VIXGztqe22I/AAAAAAAAAVI/RAQEtBQ5AVc/s1600/AppMemory.png"
+                                                                          height="235" width="400"/></a></div>
+<div class="separator" style="clear: both; text-align: center;"><br/></div>
+<div class="separator" style="clear: both; text-align: left;">The test was ran from 14:22 to 14:37. Even though we were
+    pumping through 610M of data through the application the heap was gittering between 50m and 200m, easily able to
+    reclaim the memory of the data we have streamed out.
+</div>
+<br/>For those new to Cassandra and other distributed databases this might not seem that spectacular, but I once wrote a rather large project to do what we can manage here in a few lines. Awesome work by the Apache Cassandra commitors and the DataStax Java driver team.
+<br/><br/>

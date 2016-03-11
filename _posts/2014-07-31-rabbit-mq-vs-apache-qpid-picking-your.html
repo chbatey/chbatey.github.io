@@ -12,4 +12,64 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-62136284898163501
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/07/rabbit-mq-vs-apache-qpid-picking-your.html
 ---
 
-Two of the top AMQP brokers are RabbitMQ and QPID. Which one is for you? Here are some of the considerations:<br /><br />Both have the same programming model as you can connect with any AMQP compatible client, so how do you pick?<br /><br />First off you need to decide if you're interested in the Java QPID broker or the C++ QPID broker. They have the same name but they are quite different. This article will compare the C++ QPID broker.<br /><br /><h4>Dependencies</h4><b><br /></b><b>RabbitMQ</b> has been developed in Erlang, and thus you need to install Erlang before you can run it. Think of this as the equivalent of needing a JVM for running something like Tomcat. Erlang is in most Linux distros packaging system so this is easy.<br /><br /><b>QPID</b> C++ broker doesn't have a storage dependency like its Java equivalent. To enable any form of HA QPID depends on rgmanager.<br /><br /><h4>Persistance</h4><div><b><br /></b></div><div><b>RabbitMQ</b> uses the built in Erlang database: Mnesia. A Mnesia database can be configured to either be in RAM or disk, which allows RabbitMQ to offer in memory / disk based queues very easily. It also means the developers of RabbitMQ haven't had all the complexities of developing a file based storage mechanism and don't rely on a database.</div><div><br /></div><div><b>QPID</b> stores its queues in memory or database. Without looking at the code that is all we're going to learn. If you see QPID referencing databases then you are looking at the QPID Java broker.</div><div><br /></div><h4>HA Queues and Failover</h4><b><br /></b><b>RabbitMQ</b> runs in an active-passive mode for HA queues. Each queue has a master and writes are replicated to slaves. By default, RabbitMQ doesn't try and solve network partition within clusters. It expects a reliable LAN and should never be used across a WAN. However it has two optional ways of dealing with network partitions: <b>pause_minority</b> and <b>autoheal</b>. If you enable pause minority a rabbit in a cluster will disable its self by disconnecting clients if it can only communicate with a minority of nodes. The idea here is that clients will reconnect to the majority part of the cluster. Autoheal lets the nodes carry on as normal and when the network partition ends resets the nodes in the side that had the fewest client connections, how brutal!<br /><br /><br /><b>QPID</b> has overwhelming number of options when it comes to HA. Lets stick to in LAN HA. There you have a<a href="https://qpid.apache.org/releases/qpid-0.28/cpp-broker/book/chapter-ha.html">ctive-passive messaging clusters.</a>&nbsp;Here queues are replicated to a passive QPID node, then when the master fails you can either move a virtual IP or configure the client with both the master and the salve and it will failover. The big caveat is that QPID won't handle failover its self, you need a cluster manager like Rgmanager. The rational is that they want to avoid split brain, I'd rather have the functionality built in and not use it if I need to worry about split brain.<br /><br /><h4>Cross DC? WAN compatible?</h4><div><br /></div><div>Who runs in a single DC these days? Not me! Most queueing solutions shy away from the WAN connection. Most have a clustering mode that will only work in a reliable LAN. When it comes to getting your data from one datacenter to another it is usually a bolt on.</div><div><br /></div><div><b>RabbitMQ</b> has two plugins to handle this. Lets take them individually. The <b>Shovel </b>plugin allows you to take messages from a queue in one cluster and put it on an exchange in another, perfect! It can be configured to create the queues/exchanges and handles connection failures. You can set properties like the ack mode depending on how resilient you want the putting of messages to be. You can also list multiple brokers so you can have it failover to another broker if you lose connection to the original. A great feature of shovels is that you can define them on every node of your cluster and it will run on a single node, if that node fails then it will start on another node.</div><div><br /></div><div><b>RabbitMQ</b> also has the <b>federation</b> plugin. This plugin allows you to receive messages from exchanges and queues from other brokers. It achieves the same goal as the shovel plugin but is slightly less configurable.</div><div><br /></div><div><b>QPID </b>has a very similar feature to shovels called <b>broker federation</b>&nbsp;where you define a source queue on one broker and a destination exchange on a broker running in a different exchange. Like RabbitMQ these "routes" can be replicated on a cluster of brokers and if the broker that is executing the route goes down another in the cluster can take its place.</div><div><br /></div><div>It is a draw! However I would always consider a simpler option for cross WAN queueing. That is get the message in a queue in the datacenter is is produces but use a consumer from an application running in the other datacenter. After all it is your application that needs the message and is best places to handle failures.</div><div><br /></div><h4>Subjectiveness</h4><div><br /></div><div><b>RabbitMQ</b> is far simpler to get going with, primarily due to fantastic documentation and very easy install process. I also like the the fact RabbitMQ uses Erlang's in built database and internode communication mechanism. The two modes for network partitions are very nice also. So RabbitMQ wins this tight race.<br /><br />However, before you go and use RabbitMQ, checkout Apache Kafka as the wildcard!</div>
+Two of the top AMQP brokers are RabbitMQ and QPID. Which one is for you? Here are some of the considerations:<br/>
+<br/>Both have the same programming model as you can connect with any AMQP compatible client, so how do you pick?<br/>
+<br/>First off you need to decide if you're interested in the Java QPID broker or the C++ QPID broker. They have the same name but they are quite different. This article will compare the C++ QPID broker.
+<br/><br/><h4>Dependencies</h4><b><br/></b>
+<b>RabbitMQ</b> has been developed in Erlang, and thus you need to install Erlang before you can run it. Think of this as the equivalent of needing a JVM for running something like Tomcat. Erlang is in most Linux distros packaging system so this is easy.
+<br/><br/>
+<b>QPID</b> C++ broker doesn't have a storage dependency like its Java equivalent. To enable any form of HA QPID depends on rgmanager.
+<br/><br/><h4>Persistance</h4>
+<div><b><br/></b></div>
+<div><b>RabbitMQ</b> uses the built in Erlang database: Mnesia. A Mnesia database can be configured to either be in RAM
+    or disk, which allows RabbitMQ to offer in memory / disk based queues very easily. It also means the developers of
+    RabbitMQ haven't had all the complexities of developing a file based storage mechanism and don't rely on a database.
+</div>
+<div><br/></div>
+<div><b>QPID</b> stores its queues in memory or database. Without looking at the code that is all we're going to learn.
+    If you see QPID referencing databases then you are looking at the QPID Java broker.
+</div>
+<div><br/></div><h4>HA Queues and Failover</h4><b><br/></b>
+<b>RabbitMQ</b> runs in an active-passive mode for HA queues. Each queue has a master and writes are replicated to slaves. By default, RabbitMQ doesn't try and solve network partition within clusters. It expects a reliable LAN and should never be used across a WAN. However it has two optional ways of dealing with network partitions:
+<b>pause_minority</b> and
+<b>autoheal</b>. If you enable pause minority a rabbit in a cluster will disable its self by disconnecting clients if it can only communicate with a minority of nodes. The idea here is that clients will reconnect to the majority part of the cluster. Autoheal lets the nodes carry on as normal and when the network partition ends resets the nodes in the side that had the fewest client connections, how brutal!
+<br/><br/><br/>
+<b>QPID</b> has overwhelming number of options when it comes to HA. Lets stick to in LAN HA. There you have a<a
+        href="https://qpid.apache.org/releases/qpid-0.28/cpp-broker/book/chapter-ha.html">ctive-passive messaging
+    clusters.</a>&nbsp;Here queues are replicated to a passive QPID node, then when the master fails you can either move a virtual IP or configure the client with both the master and the salve and it will failover. The big caveat is that QPID won't handle failover its self, you need a cluster manager like Rgmanager. The rational is that they want to avoid split brain, I'd rather have the functionality built in and not use it if I need to worry about split brain.
+<br/><br/><h4>Cross DC? WAN compatible?</h4>
+<div><br/></div>
+<div>Who runs in a single DC these days? Not me! Most queueing solutions shy away from the WAN connection. Most have a
+    clustering mode that will only work in a reliable LAN. When it comes to getting your data from one datacenter to
+    another it is usually a bolt on.
+</div>
+<div><br/></div>
+<div><b>RabbitMQ</b> has two plugins to handle this. Lets take them individually. The <b>Shovel </b>plugin allows you to
+    take messages from a queue in one cluster and put it on an exchange in another, perfect! It can be configured to
+    create the queues/exchanges and handles connection failures. You can set properties like the ack mode depending on
+    how resilient you want the putting of messages to be. You can also list multiple brokers so you can have it failover
+    to another broker if you lose connection to the original. A great feature of shovels is that you can define them on
+    every node of your cluster and it will run on a single node, if that node fails then it will start on another node.
+</div>
+<div><br/></div>
+<div><b>RabbitMQ</b> also has the <b>federation</b> plugin. This plugin allows you to receive messages from exchanges
+    and queues from other brokers. It achieves the same goal as the shovel plugin but is slightly less configurable.
+</div>
+<div><br/></div>
+<div><b>QPID </b>has a very similar feature to shovels called <b>broker federation</b>&nbsp;where you define a source
+    queue on one broker and a destination exchange on a broker running in a different exchange. Like RabbitMQ these
+    "routes" can be replicated on a cluster of brokers and if the broker that is executing the route goes down another
+    in the cluster can take its place.
+</div>
+<div><br/></div>
+<div>It is a draw! However I would always consider a simpler option for cross WAN queueing. That is get the message in a
+    queue in the datacenter is is produces but use a consumer from an application running in the other datacenter. After
+    all it is your application that needs the message and is best places to handle failures.
+</div>
+<div><br/></div><h4>Subjectiveness</h4>
+<div><br/></div>
+<div><b>RabbitMQ</b> is far simpler to get going with, primarily due to fantastic documentation and very easy install
+    process. I also like the the fact RabbitMQ uses Erlang's in built database and internode communication mechanism.
+    The two modes for network partitions are very nice also. So RabbitMQ wins this tight race.<br/><br/>However, before
+    you go and use RabbitMQ, checkout Apache Kafka as the wildcard!
+</div>

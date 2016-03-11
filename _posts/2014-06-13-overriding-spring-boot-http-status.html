@@ -11,4 +11,8 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-39156474251167949
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/06/overriding-spring-boot-http-status.html
 ---
 
-One thing I found a little baffling when I started using spring boot was that the health pages returned 200 regardless of your 'Status'. So 'DOWN' would return a 200 with the actual information in a JSON payload. This means any monitoring system needs to parse the JSON rather than just know based on the HTTP status code.<br /><br />Finally for Spring Boot 1.1 you can override this! For example if you want DOWN to be a 500, then add the following to your application properties file.<br /><br /><b><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">endpoints.health.mapping[DOWN]=INTERNAL_SERVER_ERROR</span></b><br /><b><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></b>
+One thing I found a little baffling when I started using spring boot was that the health pages returned 200 regardless of your 'Status'. So 'DOWN' would return a 200 with the actual information in a JSON payload. This means any monitoring system needs to parse the JSON rather than just know based on the HTTP status code.
+<br/>
+<br/>Finally for Spring Boot 1.1 you can override this! For example if you want DOWN to be a 500, then add the following to your application properties file.
+<br/><br/><b><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">endpoints.health.mapping[DOWN]=INTERNAL_SERVER_ERROR</span></b>
+<br/><b><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></b>

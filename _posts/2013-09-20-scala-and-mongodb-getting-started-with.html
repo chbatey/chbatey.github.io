@@ -12,4 +12,167 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-41686857599280155
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/09/scala-and-mongodb-getting-started-with.html
 ---
 
-The officially supported Scala driver for Mongo is Casbah. Cashbah is a thin wrapper around the Java MongoDB driver that gives it a Scala like feel. As long as you ignore all the MongoDBObjects then it feels much more like being in the Mongo shell or working in Python that working with Java/Mongo.<br /><br />All the examples are copied from a Scala REPL launched from an SBT project with Casbah added as a dependency.<br /><br />So lets get started by importing the Casbah package:<br /><br /><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; import com.mongodb.casbah.Imports._&nbsp;</span><br /><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">import com.mongodb.casbah.Imports._</span><br /><br />Now lets create a connection to a locally running Mongo and use the "test" database:<br /><br /><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val mongoClient = MongoClient()</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">mongoClient: com.mongodb.casbah.MongoClient = com.mongodb.casbah.MongoClient@2acf0276</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val database = mongoClient("test")</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">database: com.mongodb.casbah.MongoDB = test</span></div><div class="p1"><br /></div><div class="p1">And now lets get a reference to the messages collections:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val collection = database("messages")</span></div><div class="p1">        </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">collection: com.mongodb.casbah.MongoCollection = messages</span></div><div class="p1"><br /></div><div class="p1">As you can see Casbah makes heavy use of the apply method to give relatively nice boiler plate connection code. To print all the rows for a collection you can use the find method which returns an iterator (there is none at the moment):</div><div class="p1"><br /></div><div class="p1">       </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span></div><div class="p1"><br /></div><div class="p1">Now lets insert some data the using the insert method and then find and print it:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(MongoDBObject("message" -&gt; "Hello world"))</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res2: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span></div><div class="p1">           </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span></div><div class="p1"><br /></div><div class="p1">And adding another document:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(MongoDBObject("message" -&gt; "Hello London"))</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res4: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span></div><div class="p1">            </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span></div><div class="p1"><br /></div><div class="p1">The familiar findone method is there. Rather than an Iterable object returned from find, findOne returns an Option so you can use a basic pattern match to handle the document being there or not:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val singleResult = collection.findOne()</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">singleResult: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"})</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; singleResult match {</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| &nbsp; case None =&gt; println("No messages found")</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| &nbsp; case Some(message) =&gt; println(message)</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| }</span></div><div class="p1">              </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span></div><div class="p1"><br /></div><div class="p1">Now lets query using the ID of an object we've inserted (querying by any other field is the same):</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val query = MongoDBObject("_id" -&gt; helloWorld.get("_id"))</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">id: com.mongodb.casbah.commons.Imports.DBObject = { "_id" : { "$oid" : "523aa69a30048ee48f49c333"}}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.findOne(query)</span></div><div class="p1">           </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res12: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"})</span></div><div class="p1"><br /></div><div class="p1">We can also update the document in the database and then get it again to prove it has changed:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.update(query, MongoDBObject("message" -&gt; "Hello Planet"))</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res13: com.mongodb.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "updatedExisting" : true , "n" : 1 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.findOne(query)</span></div><div class="p1">           </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res14: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"})</span></div><div class="p1"><br /></div><div class="p1">The remove method works in the same way, just pass in a MongoDBObject for the selection criterion.</div><div class="p1"><br /></div><div class="p1">Not look Scalary enough for you? You can also insert using the += method:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection += MongoDBObject("message"-&gt;"Hello England")</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res15: com.mongodb.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row))</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"}</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span></div><div class="p1">             </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c911230048ee48f49c335"} , "message" : "Hello England"}</span></div><div class="p1"><br /></div><div class="p1">How do you build more complex document in Scala? Simply use the MongoDBObject ++ method, for example we can create an object with multiple fields, insert it, then view it by printing all the documents in the collection:</div><div class="p1"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val moreThanOneField = MongoDBObject("message" -&gt; "I'm coming") ++ ("time" -&gt; "today") ++ ("Name" -&gt; "Chris")</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">moreThanOneField: com.mongodb.casbah.commons.Imports.DBObject = { "message" : "I'm coming" , "time" : "today" , "Name" : "Chris"}</span></div><div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br /></span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(moreThanOneField)</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res6: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 234 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span></div><div class="p2"><br /></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(println(_) )</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"}</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span></div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c911230048ee48f49c335"} , "message" : "Hello England"}</span></div><div class="p1">                 </div><div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c96b530041dae32fd04d6"} , "message" : "I'm coming" , "time" : "today" , "Name" : "Chris"}</span></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div><div class="p1"><br /></div></div>
+The officially supported Scala driver for Mongo is Casbah. Cashbah is a thin wrapper around the Java MongoDB driver that gives it a Scala like feel. As long as you ignore all the MongoDBObjects then it feels much more like being in the Mongo shell or working in Python that working with Java/Mongo.
+<br/><br/>All the examples are copied from a Scala REPL launched from an SBT project with Casbah added as a dependency.
+<br/><br/>So lets get started by importing the Casbah package:<br/><br/>
+<div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; import com.mongodb.casbah.Imports._&nbsp;</span><br/><span
+        style="font-family: Courier New, Courier, monospace; font-size: x-small;">import com.mongodb.casbah.Imports._</span><br/><br/>Now
+    lets create a connection to a locally running Mongo and use the "test" database:<br/><br/>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val mongoClient = MongoClient()</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">mongoClient: com.mongodb.casbah.MongoClient = com.mongodb.casbah.MongoClient@2acf0276</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val database = mongoClient("test")</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">database: com.mongodb.casbah.MongoDB = test</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">And now lets get a reference to the messages collections:</div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val collection = database("messages")</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">collection: com.mongodb.casbah.MongoCollection = messages</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">As you can see Casbah makes heavy use of the apply method to give relatively nice boiler plate
+        connection code. To print all the rows for a collection you can use the find method which returns an iterator
+        (there is none at the moment):
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">Now lets insert some data the using the insert method and then find and print it:</div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(MongoDBObject("message" -&gt; "Hello world"))</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res2: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">And adding another document:</div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(MongoDBObject("message" -&gt; "Hello London"))</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res4: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row) )</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">The familiar findone method is there. Rather than an Iterable object returned from find, findOne
+        returns an Option so you can use a basic pattern match to handle the document being there or not:
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val singleResult = collection.findOne()</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">singleResult: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"})</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; singleResult match {</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| &nbsp; case None =&gt; println("No messages found")</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| &nbsp; case Some(message) =&gt; println(message)</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">&nbsp; &nbsp; &nbsp;| }</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"}</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">Now lets query using the ID of an object we've inserted (querying by any other field is the same):
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val query = MongoDBObject("_id" -&gt; helloWorld.get("_id"))</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">id: com.mongodb.casbah.commons.Imports.DBObject = { "_id" : { "$oid" : "523aa69a30048ee48f49c333"}}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.findOne(query)</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res12: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello world"})</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">We can also update the document in the database and then get it again to prove it has changed:</div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.update(query, MongoDBObject("message" -&gt; "Hello Planet"))</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res13: com.mongodb.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "updatedExisting" : true , "n" : 1 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.findOne(query)</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res14: Option[collection.T] = Some({ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"})</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">The remove method works in the same way, just pass in a MongoDBObject for the selection criterion.
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">Not look Scalary enough for you? You can also insert using the += method:</div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection += MongoDBObject("message"-&gt;"Hello England")</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res15: com.mongodb.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 225 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(row =&gt; println(row))</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"}</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c911230048ee48f49c335"} , "message" : "Hello England"}</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1">How do you build more complex document in Scala? Simply use the MongoDBObject ++ method, for example
+        we can create an object with multiple fields, insert it, then view it by printing all the documents in the
+        collection:
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; val moreThanOneField = MongoDBObject("message" -&gt; "I'm coming") ++ ("time" -&gt; "today") ++ ("Name" -&gt; "Chris")</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">moreThanOneField: com.mongodb.casbah.commons.Imports.DBObject = { "message" : "I'm coming" , "time" : "today" , "Name" : "Chris"}</span>
+    </div>
+    <div class="p2"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;"><br/></span></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.insert(moreThanOneField)</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">res6: com.mongodb.casbah.Imports.WriteResult = { "serverUsed" : "/127.0.0.1:27017" , "n" : 0 , "connectionId" : 234 , "err" : &nbsp;null &nbsp;, "ok" : 1.0}</span>
+    </div>
+    <div class="p2"><br/></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">scala&gt; collection.find().foreach(println(_) )</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa69a30048ee48f49c333"} , "message" : "Hello Planet"}</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523aa6bf30048ee48f49c334"} , "message" : "Hello London"}</span>
+    </div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c911230048ee48f49c335"} , "message" : "Hello England"}</span>
+    </div>
+    <div class="p1"></div>
+    <div class="p1"><span style="font-family: Courier New, Courier, monospace; font-size: x-small;">{ "_id" : { "$oid" : "523c96b530041dae32fd04d6"} , "message" : "I'm coming" , "time" : "today" , "Name" : "Chris"}</span>
+    </div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+    <div class="p1"><br/></div>
+</div>

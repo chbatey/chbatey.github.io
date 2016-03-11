@@ -11,4 +11,29 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-44222371591368002
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/06/behaviour-driven-testing-with-cucumber.html
 ---
 
-So you're tasked with building a service that facades your company's legacy user management system. You need to do this as your part of the company needs to handle the legacy system going down.<br /><br />To add resiliency you are required to save a user's information in case the legacy system is down. You need to be able to handle restarts so this cache will need to be persistent.<br /><br />You're going to use Cassandra as your persistence, so how do test this? You sit down your your analyst and QA and come up with the following feature:<br /><br /><script src="https://gist.github.com/chbatey/7221e941d77a3f17c1d3.js"></script> How would you implement these features? Assuming that the legacy system is a HTTP service you can use Wiremock to mock it being up and down.<br /><br />For example here is how to mock the legacy system being up with Wiremock: <br /><br /><script src="https://gist.github.com/chbatey/1090566a06dcd3ee9dea.js"></script> And an example of it being down:<br /><br /><script src="https://gist.github.com/chbatey/25a011c7917e1a1e0d75.js"></script> So the next requirement is that Cassandra being down doesn't make your service fail i.e. <br /><br /><script src="https://gist.github.com/chbatey/d6de948a6da88d5a58e2.js"></script> The first one you could stop Cassandra, perhaps using the great tool CCM. However this is slow, and you need to write code to make sure it is back up/down, all of this in a different process. And how about the next test? How do we make Cassandra return the result slowly? Or produce a Write Timeout Exception?<br /><br />That is where Stubbed Cassandra comes in handy. To get is started you can add some code like this to start it before the tests and close it after tests: <br /><br /><script src="https://gist.github.com/chbatey/ef4ac047983f82295c75.js"></script> Now implementing the step definition to mimic Cassandra being down is as easy as:  <br /><br /><script src="https://gist.github.com/chbatey/6dcf0601b90e3ca2ed44.js"></script> Which is a lot quicker than turning off a real Cassandra, and starting it back up in the @Before is also very quick.<br /><br />Now to mimic Write time outs in Cassandra:<br /><br /><script src="https://gist.github.com/chbatey/91ea01dc09048f70ddfe.js"></script> Very similar things could be done for read timeouts and unavailable exceptions.<br /><br />This article gave you an insight to how you can behaviour drive features relating to Cassandra being down. The full code and running tests are <a href="https://github.com/chbatey/scassandra-cucumber-example">here</a>. Full information on how to use Stubbed Cassandra is <a href="http://www.scassandra.org/">here</a>, you'll probably want to documentation for the Java client for Scassandra which is <a href="http://www.scassandra.org/java-client/">here</a>.<br /><br /><br />
+So you're tasked with building a service that facades your company's legacy user management system. You need to do this as your part of the company needs to handle the legacy system going down.
+<br/>
+<br/>To add resiliency you are required to save a user's information in case the legacy system is down. You need to be able to handle restarts so this cache will need to be persistent.
+<br/>
+<br/>You're going to use Cassandra as your persistence, so how do test this? You sit down your your analyst and QA and come up with the following feature:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/7221e941d77a3f17c1d3.js"></script> How would you implement these features? Assuming that the legacy system is a HTTP service you can use Wiremock to mock it being up and down.
+<br/><br/>For example here is how to mock the legacy system being up with Wiremock: <br/><br/>
+<script src="https://gist.github.com/chbatey/1090566a06dcd3ee9dea.js"></script> And an example of it being down:<br/>
+<br/>
+<script src="https://gist.github.com/chbatey/25a011c7917e1a1e0d75.js"></script> So the next requirement is that Cassandra being down doesn't make your service fail i.e.
+<br/><br/>
+<script src="https://gist.github.com/chbatey/d6de948a6da88d5a58e2.js"></script> The first one you could stop Cassandra, perhaps using the great tool CCM. However this is slow, and you need to write code to make sure it is back up/down, all of this in a different process. And how about the next test? How do we make Cassandra return the result slowly? Or produce a Write Timeout Exception?
+<br/>
+<br/>That is where Stubbed Cassandra comes in handy. To get is started you can add some code like this to start it before the tests and close it after tests:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/ef4ac047983f82295c75.js"></script> Now implementing the step definition to mimic Cassandra being down is as easy as:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/6dcf0601b90e3ca2ed44.js"></script> Which is a lot quicker than turning off a real Cassandra, and starting it back up in the @Before is also very quick.
+<br/><br/>Now to mimic Write time outs in Cassandra:<br/><br/>
+<script src="https://gist.github.com/chbatey/91ea01dc09048f70ddfe.js"></script> Very similar things could be done for read timeouts and unavailable exceptions.
+<br/>
+<br/>This article gave you an insight to how you can behaviour drive features relating to Cassandra being down. The full code and running tests are
+<a href="https://github.com/chbatey/scassandra-cucumber-example">here</a>. Full information on how to use Stubbed Cassandra is
+<a href="http://www.scassandra.org/">here</a>, you'll probably want to documentation for the Java client for Scassandra which is
+<a href="http://www.scassandra.org/java-client/">here</a>.<br/><br/><br/>

@@ -13,4 +13,37 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-17285722693168422
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/a-simple-mysql-to-cassandra-migration.html
 ---
 
-I previously blogged about a Cassandra anti-pattern: <a href="http://christopher-batey.blogspot.co.uk/2015/02/cassandra-anti-pattern-distributed.html" target="_blank">Distributed joins</a>. This commonly happens when people move from a relational database to a Cassandra. I'm going to use the same example to show how to use Spark to migrate data that previously required joins into a denormalised model in Cassandra.<br /><br />So let's start with a simple set of tables in MySQL that store customer event information that references staff members and a store from a different table.<br /><br /><script src="https://gist.github.com/chbatey/b1e04f55f8c5f2133426.js"></script><br />Insert a few rows (or a few million)<br /><br /><script src="https://gist.github.com/chbatey/eef906a61f52eca0c511.js"></script><br /><div>Okay so we only have a few rows but imagine we had many millions of customer events and in the order of hundreds of staff members and stores.<br /><br />Now let's see how we can migrate it to Cassandra with a few lines of Spark code :)<br /><br />Spark has built in support for databases that have a JDBC driver via the <a href="https://spark.apache.org/docs/1.2.0/api/java/org/apache/spark/rdd/JdbcRDD.html" target="_blank">JdbcRDD</a>. Cassandra has great support for Spark via <a href="https://github.com/datastax/spark-cassandra-connector" target="_blank">DataStax's open source connector</a>. We'll be using the two together to migrate data from MySQL to Cassandra. Prepare to be shocked how easy this is...<br /><br />Assuming you have Spark and the connector on your classpath you'll need these imports:<br /><br /><script src="https://gist.github.com/chbatey/0ca630e2c4a0ea191578.js"></script><br />Then we can create our SparkContext and it also adds the Cassandra methods to the context and to RDDs.<br /><br /><script src="https://gist.github.com/chbatey/b224ef4d1bb00a03d1d6.js"></script></div>My MySQL server is running on IP 192.168.10.11 and I am connecting very securely with with user root and password password.<br /><br />Next we'll create the new Cassandra table, if yours already exists skip this part.<br /><br /><script src="https://gist.github.com/chbatey/8b8465a7a33665e55d33.js"></script><br />Then it is time for the migration! <br /><br /><script src="https://gist.github.com/chbatey/792f1e2885e70f4d376d.js"></script><br />We first create an JdbcRDD allowing MySQL to do the join. You need to give Spark a way to partition the MySql table, so you give it a statement with variables in and a starting index and a final index. You also tell Spark how many partitions to split it into, you want this to be greater than the number of cores in your Spark cluster so these can happen concurrently.<br /><br />Finally we save it to Cassandra. The chances are this migration will be bottle necked by the queries to MySQL. If the Store and Staff table are relatively small it would be worth bringing them completely in to memory, either as an RDD or as an actual map so that MySQL doesn't have to join for every partition.<br /><br />Assuming your Spark workers are running on the same servers as your Cassandra nodes the partitions will be spread out and inserted locally to every node in your cluster.<br /><br />This will obviously hammer the MySQL server so beware :)<br /><br />The full source file is on <a href="https://github.com/chbatey/spark-sandbox/blob/master/src/main/scala/RdmsToCassandra.scala" target="_blank">Github</a>.
+I previously blogged about a Cassandra anti-pattern: <a
+        href="http://christopher-batey.blogspot.co.uk/2015/02/cassandra-anti-pattern-distributed.html" target="_blank">Distributed
+    joins</a>. This commonly happens when people move from a relational database to a Cassandra. I'm going to use the same example to show how to use Spark to migrate data that previously required joins into a denormalised model in Cassandra.
+<br/>
+<br/>So let's start with a simple set of tables in MySQL that store customer event information that references staff members and a store from a different table.
+<br/><br/>
+<script src="https://gist.github.com/chbatey/b1e04f55f8c5f2133426.js"></script><br/>Insert a few rows (or a few million)
+<br/><br/>
+<script src="https://gist.github.com/chbatey/eef906a61f52eca0c511.js"></script><br/>
+<div>Okay so we only have a few rows but imagine we had many millions of customer events and in the order of hundreds of
+    staff members and stores.<br/><br/>Now let's see how we can migrate it to Cassandra with a few lines of Spark code
+    :)<br/><br/>Spark has built in support for databases that have a JDBC driver via the <a
+            href="https://spark.apache.org/docs/1.2.0/api/java/org/apache/spark/rdd/JdbcRDD.html" target="_blank">JdbcRDD</a>.
+    Cassandra has great support for Spark via <a href="https://github.com/datastax/spark-cassandra-connector"
+                                                 target="_blank">DataStax's open source connector</a>. We'll be using
+    the two together to migrate data from MySQL to Cassandra. Prepare to be shocked how easy this is...<br/><br/>Assuming
+    you have Spark and the connector on your classpath you'll need these imports:<br/><br/>
+    <script src="https://gist.github.com/chbatey/0ca630e2c4a0ea191578.js"></script>
+    <br/>Then we can create our SparkContext and it also adds the Cassandra methods to the context and to
+    RDDs.<br/><br/>
+    <script src="https://gist.github.com/chbatey/b224ef4d1bb00a03d1d6.js"></script>
+</div>My MySQL server is running on IP 192.168.10.11 and I am connecting very securely with with user root and password password.
+<br/><br/>Next we'll create the new Cassandra table, if yours already exists skip this part.<br/><br/>
+<script src="https://gist.github.com/chbatey/8b8465a7a33665e55d33.js"></script><br/>Then it is time for the migration!
+<br/><br/>
+<script src="https://gist.github.com/chbatey/792f1e2885e70f4d376d.js"></script>
+<br/>We first create an JdbcRDD allowing MySQL to do the join. You need to give Spark a way to partition the MySql table, so you give it a statement with variables in and a starting index and a final index. You also tell Spark how many partitions to split it into, you want this to be greater than the number of cores in your Spark cluster so these can happen concurrently.
+<br/>
+<br/>Finally we save it to Cassandra. The chances are this migration will be bottle necked by the queries to MySQL. If the Store and Staff table are relatively small it would be worth bringing them completely in to memory, either as an RDD or as an actual map so that MySQL doesn't have to join for every partition.
+<br/>
+<br/>Assuming your Spark workers are running on the same servers as your Cassandra nodes the partitions will be spread out and inserted locally to every node in your cluster.
+<br/><br/>This will obviously hammer the MySQL server so beware :)<br/><br/>The full source file is on <a
+        href="https://github.com/chbatey/spark-sandbox/blob/master/src/main/scala/RdmsToCassandra.scala"
+        target="_blank">Github</a>.

@@ -11,4 +11,71 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-50656370468167309
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/03/cassandra-anti-pattern-cassandra-logged.html
 ---
 
-I've previously blogged about other anti-patterns:<br /><ol><li>Distributed joins</li><li>Unlogged batches</li></ol><div>This post is similar to the unlogged batches post but is instead about logged batches.</div><div><br /></div><div>We'll again go through an example Java application.<br /><br />The good news is that the common misuse is virtually the same as the last article on unlogged batches, so you know what not to do. The bad news is if you do happen to misuse them it is even worse!<br /><br />Let's see why. Logged batches are used to ensure that all the statements will eventually succeed. Cassandra achieves this by first writing all the statements to a batch log. That batch log is replicated to two other nodes in case the coordinator fails. If the coordinator fails then another replica for the batch log will take over.<br /><br />Now that sounds like a lot of work. So if you try to use logged batches as a performance improvement then you'll be very disappointed! For a logged batch with 8 insert statements (equally distributed) in a 8 node cluster it will look something like this:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-dv9zIC84QD4/VNoNE0YXn8I/AAAAAAAAAX0/b3wtV48fuB0/s1600/Screenshot%2B2015-02-10%2B13.51.56.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://3.bp.blogspot.com/-dv9zIC84QD4/VNoNE0YXn8I/AAAAAAAAAX0/b3wtV48fuB0/s1600/Screenshot%2B2015-02-10%2B13.51.56.png" height="247" width="320" /></a></div><br />The coordinator has to do a lot more work than any other node in the cluster. Where if we were to just do them as regular inserts we'd be looking like this:<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXU/s15pNUk4RGM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://3.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXU/s15pNUk4RGM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png" height="257" width="320" /></a></div><br />A nice even workload.<br /><br /><h4>So when would you want to use logged batches?</h4></div><div><br />Short answer: consistent denormalisation. In most cases you won't want to use them, they are a performance hit. However for some tables where you have denormalised you can decide to make sure that both statements succeed. Lets go back to our customer event table from the previous post but also add a customer events by staff id table:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/31cd5b1e3406d1d2a2cb.js"></script></div><div><br /></div><div>We could insert into this table in a logged batch to ensure that we don't end up with events in one table and not the other. The code for this would look like this:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/c0d92981f92cd6feef5a.js"></script></div><div><br /></div><div>This would mean both inserts would end up in the batch log and be guaranteed to eventually succeed.</div><div><br /></div><div>The downside is this adds more work and complexity to our write operations. Logged batches have two opportunities to fail:</div><div><ol><li>When writing to the batch log</li><li>When applying the actual statements</li></ol><div>Let's forget about reads as they aren't destructive and concentrate on writes. If the first phase fails Cassandra returns a WriteTimeoutException with write type of BATCH_LOG. This you'll need to retry if you want your inserts to take place.&nbsp;</div></div><div><br /></div><div>If the second phase fails you'll get a WriteTimeoutException with the write type of BATCH. This means it made it to the batch log so that they will get replayed eventually. If you definitely need to read the writes you would read at SERIAL, meaning any committed batches would be replayed first.<br /><br /><h4>Conclusion</h4></div><div><br />Logged batches are rarely to be used, they add complexity if you try to read at SERIAL after failure and they are a performance hit. If you are going to use them it is in the odd situation where you can't handle inconsistencies between tables. They allow you to guarantee the updates will eventually happen, they do not however offer isolation i.e a client can see part of the batch before it is finished.&nbsp;</div><div><br /></div>
+I've previously blogged about other anti-patterns:<br/>
+<ol>
+    <li>Distributed joins</li>
+    <li>Unlogged batches</li>
+</ol>
+<div>This post is similar to the unlogged batches post but is instead about logged batches.</div>
+<div><br/></div>
+<div>We'll again go through an example Java application.<br/><br/>The good news is that the common misuse is virtually
+    the same as the last article on unlogged batches, so you know what not to do. The bad news is if you do happen to
+    misuse them it is even worse!<br/><br/>Let's see why. Logged batches are used to ensure that all the statements will
+    eventually succeed. Cassandra achieves this by first writing all the statements to a batch log. That batch log is
+    replicated to two other nodes in case the coordinator fails. If the coordinator fails then another replica for the
+    batch log will take over.<br/><br/>Now that sounds like a lot of work. So if you try to use logged batches as a
+    performance improvement then you'll be very disappointed! For a logged batch with 8 insert statements (equally
+    distributed) in a 8 node cluster it will look something like this:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://3.bp.blogspot.com/-dv9zIC84QD4/VNoNE0YXn8I/AAAAAAAAAX0/b3wtV48fuB0/s1600/Screenshot%2B2015-02-10%2B13.51.56.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://3.bp.blogspot.com/-dv9zIC84QD4/VNoNE0YXn8I/AAAAAAAAAX0/b3wtV48fuB0/s1600/Screenshot%2B2015-02-10%2B13.51.56.png"
+                                                                              height="247" width="320"/></a></div>
+    <br/>The coordinator has to do a lot more work than any other node in the cluster. Where if we were to just do them
+    as regular inserts we'd be looking like this:<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://3.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXU/s15pNUk4RGM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://3.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXU/s15pNUk4RGM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png"
+                                                                              height="257" width="320"/></a></div>
+    <br/>A nice even workload.<br/><br/><h4>So when would you want to use logged batches?</h4></div>
+<div><br/>Short answer: consistent denormalisation. In most cases you won't want to use them, they are a performance
+    hit. However for some tables where you have denormalised you can decide to make sure that both statements succeed.
+    Lets go back to our customer event table from the previous post but also add a customer events by staff id table:
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/31cd5b1e3406d1d2a2cb.js"></script>
+</div>
+<div><br/></div>
+<div>We could insert into this table in a logged batch to ensure that we don't end up with events in one table and not
+    the other. The code for this would look like this:
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/c0d92981f92cd6feef5a.js"></script>
+</div>
+<div><br/></div>
+<div>This would mean both inserts would end up in the batch log and be guaranteed to eventually succeed.</div>
+<div><br/></div>
+<div>The downside is this adds more work and complexity to our write operations. Logged batches have two opportunities
+    to fail:
+</div>
+<div>
+    <ol>
+        <li>When writing to the batch log</li>
+        <li>When applying the actual statements</li>
+    </ol>
+    <div>Let's forget about reads as they aren't destructive and concentrate on writes. If the first phase fails
+        Cassandra returns a WriteTimeoutException with write type of BATCH_LOG. This you'll need to retry if you want
+        your inserts to take place.&nbsp;</div>
+</div>
+<div><br/></div>
+<div>If the second phase fails you'll get a WriteTimeoutException with the write type of BATCH. This means it made it to
+    the batch log so that they will get replayed eventually. If you definitely need to read the writes you would read at
+    SERIAL, meaning any committed batches would be replayed first.<br/><br/><h4>Conclusion</h4></div>
+<div><br/>Logged batches are rarely to be used, they add complexity if you try to read at SERIAL after failure and they
+    are a performance hit. If you are going to use them it is in the odd situation where you can't handle
+    inconsistencies between tables. They allow you to guarantee the updates will eventually happen, they do not however
+    offer isolation i.e a client can see part of the batch before it is finished.&nbsp;</div>
+<div><br/></div>

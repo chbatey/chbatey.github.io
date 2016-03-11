@@ -12,4 +12,117 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-38517542327127723
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/cassandra-anti-pattern-misuse-of.html
 ---
 
-<div>This is my second post in a series about Cassandra anti-patterns,<a href="http://christopher-batey.blogspot.co.uk/2015/02/cassandra-anti-pattern-distributed.html" target="_blank"> here's the first on distributed joins</a>. This post will be on unlogged batches and the next one on logged batches.</div><div><br /></div>Batches are often misunderstood in Cassandra. &nbsp;They will rarely increase performance, that is not their purpose. That can come as quite the shock to someone coming from a relational database.<br /><div><br /></div><div>Let's understand why this is the case with some examples. In my last post on Cassandra anti-patterns I gave all the examples inside CQLSH, however let's write some Java code this time.</div><div><br /></div><div>We're going to store and retrieve some customer events. Here is the schema:&nbsp;</div><div><br /></div><div><script src="https://gist.github.com/chbatey/f5cfdd1627652a790906.js"></script></div><div><br /></div><div>Here's a simple bit of Java to persist a simple value object representing a customer event, it also creates the schema and logs the query trace.</div><div><br /></div><div><script src="https://gist.github.com/chbatey/7423c409066441b65161.js"></script></div><div><br /></div><div>We're using a prepared statement to store one customer event at a time. Now let's offer a new interface to batch insert as we could be taking these of a message queue in bulk.</div><div><br /></div><div><script src="https://gist.github.com/chbatey/00c6e32e8a9bcab4564a.js"></script></div><div><br /></div><div>It might appear naive to just implement this with a loop:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/f28df3175dc43028d13b.js"></script></div><div><br /></div><div>However, apart from the fact we'd be doing this synchronously, this is actually a great idea! Once we made this async then this would spread our inserts across the whole cluster. If you have a large cluster, this will be what you want.</div><div><br /></div><div>However, a lot of people are used to databases where explicit batching is a performance improvement. If you did this in Cassandra you're very likely to see the performance reduce. You'd end up with some code like this (the code to build a single bound statement has been extracted out to a helper method):</div><div><br /></div><div><script src="https://gist.github.com/chbatey/e256ceca0815215c31b9.js"></script></div><div><br /></div><div>Looks good right? Surely this means we get to send all our inserts in one go and the database can handle them in one storage action? Well, put simply, no. Cassandra is a distributed database, no single node can handle this type of insert even if you had a single replica per partition.<br /><br />What this is actually doing is putting a huge amount of pressure on a single coordinator. This is because the coordinator needs to forward each individual insert to the correct replicas. You're losing all the benefit of token aware load balancing policy as you're inserting different partitions in a single round trip to the database.<br /><br />If you were inserting 8 records in a 8 node cluster, assuming even distribution, it would look a bit like this:</div><div><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-i8GIOzhmPWg/VNi9VWS4NOI/AAAAAAAAAXI/R0lZsAxNGcc/s1600/Screenshot%2B2015-02-09%2B13.59.08.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://3.bp.blogspot.com/-i8GIOzhmPWg/VNi9VWS4NOI/AAAAAAAAAXI/R0lZsAxNGcc/s1600/Screenshot%2B2015-02-09%2B13.59.08.png" height="186" width="400" /></a></div></div><div><br /></div><div>Each node will have roughly the same work to do at the storage layer but the Coordinator is overwhelmed. I didn't include all the responses or the replication in the picture as I was getting sick of drawing arrows! If you need more convincing you can also see this in the trace. The code is checked into Github so you can run it your self. It only requires a locally running Cassandra cluster.<br /><br /><h4>Back to individual inserts</h4></div><div><br />If we were to keep them as normal insert statements and execute them asynchronously we'd get something more like this:</div><div><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXQ/9IXNl2Pz-pM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://2.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXQ/9IXNl2Pz-pM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png" height="257" width="320" /></a></div><br /></div><div><br /></div><div><br /></div><div>Perfect! Each node has roughly the same work to do. Not so naive after all :)</div><div><h4><br /></h4><h4>So when should you use unlogged batches?</h4></div><div><br />How about if we wanted to implement the following method:</div><div><br /></div><div><script src="https://gist.github.com/chbatey/aca06fd4daa8d999681d.js"></script></div><div><br /></div><div>Looks similar - what's the difference? Well customer id is the partition key, so this will be no more coordination work than a single insert and it can be done with a single operation at the storage layer. What does this look like with orange circles and black arrows?<br /><br /><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-vf9q_XQr85E/VNjFzOgt8QI/AAAAAAAAAXg/Y-3Y9wf6Y30/s1600/Screenshot%2B2015-02-09%2B14.35.37.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://2.bp.blogspot.com/-vf9q_XQr85E/VNjFzOgt8QI/AAAAAAAAAXg/Y-3Y9wf6Y30/s1600/Screenshot%2B2015-02-09%2B14.35.37.png" height="314" width="320" /></a></div><br /></div><div>Simple! Again I've left out replication to make it comparable to the previous diagrams.<br /><br /><h4>Conclusion</h4></div><div><br /></div><div>Most of the time you don't want to use unlogged batches with Cassandra. The time you should consider it is when you have multiple inserts/updates for the same partition key. This allows the driver to send the request in a single message and the server to handle it with a single storage action. If batches contain updates/inserts for multiple partitions you eventually just overload coordinators and have a higher likelihood of failure.<br /><br />The code examples are on github <a href="https://github.com/chbatey/cassandra-anti-patterns/tree/master" target="_blank">here</a>.</div><div><br /></div>
+<div>This is my second post in a series about Cassandra anti-patterns,<a
+        href="http://christopher-batey.blogspot.co.uk/2015/02/cassandra-anti-pattern-distributed.html" target="_blank">
+    here's the first on distributed joins</a>. This post will be on unlogged batches and the next one on logged batches.
+</div>
+<div><br/>
+</div>Batches are often misunderstood in Cassandra. &nbsp;They will rarely increase performance, that is not their purpose. That can come as quite the shock to someone coming from a relational database.
+<br/>
+<div><br/></div>
+<div>Let's understand why this is the case with some examples. In my last post on Cassandra anti-patterns I gave all the
+    examples inside CQLSH, however let's write some Java code this time.
+</div>
+<div><br/></div>
+<div>We're going to store and retrieve some customer events. Here is the schema:&nbsp;</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/f5cfdd1627652a790906.js"></script>
+</div>
+<div><br/></div>
+<div>Here's a simple bit of Java to persist a simple value object representing a customer event, it also creates the
+    schema and logs the query trace.
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/7423c409066441b65161.js"></script>
+</div>
+<div><br/></div>
+<div>We're using a prepared statement to store one customer event at a time. Now let's offer a new interface to batch
+    insert as we could be taking these of a message queue in bulk.
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/00c6e32e8a9bcab4564a.js"></script>
+</div>
+<div><br/></div>
+<div>It might appear naive to just implement this with a loop:</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/f28df3175dc43028d13b.js"></script>
+</div>
+<div><br/></div>
+<div>However, apart from the fact we'd be doing this synchronously, this is actually a great idea! Once we made this
+    async then this would spread our inserts across the whole cluster. If you have a large cluster, this will be what
+    you want.
+</div>
+<div><br/></div>
+<div>However, a lot of people are used to databases where explicit batching is a performance improvement. If you did
+    this in Cassandra you're very likely to see the performance reduce. You'd end up with some code like this (the code
+    to build a single bound statement has been extracted out to a helper method):
+</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/e256ceca0815215c31b9.js"></script>
+</div>
+<div><br/></div>
+<div>Looks good right? Surely this means we get to send all our inserts in one go and the database can handle them in
+    one storage action? Well, put simply, no. Cassandra is a distributed database, no single node can handle this type
+    of insert even if you had a single replica per partition.<br/><br/>What this is actually doing is putting a huge
+    amount of pressure on a single coordinator. This is because the coordinator needs to forward each individual insert
+    to the correct replicas. You're losing all the benefit of token aware load balancing policy as you're inserting
+    different partitions in a single round trip to the database.<br/><br/>If you were inserting 8 records in a 8 node
+    cluster, assuming even distribution, it would look a bit like this:
+</div>
+<div><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://3.bp.blogspot.com/-i8GIOzhmPWg/VNi9VWS4NOI/AAAAAAAAAXI/R0lZsAxNGcc/s1600/Screenshot%2B2015-02-09%2B13.59.08.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://3.bp.blogspot.com/-i8GIOzhmPWg/VNi9VWS4NOI/AAAAAAAAAXI/R0lZsAxNGcc/s1600/Screenshot%2B2015-02-09%2B13.59.08.png"
+                                                                              height="186" width="400"/></a></div>
+</div>
+<div><br/></div>
+<div>Each node will have roughly the same work to do at the storage layer but the Coordinator is overwhelmed. I didn't
+    include all the responses or the replication in the picture as I was getting sick of drawing arrows! If you need
+    more convincing you can also see this in the trace. The code is checked into Github so you can run it your self. It
+    only requires a locally running Cassandra cluster.<br/><br/><h4>Back to individual inserts</h4></div>
+<div><br/>If we were to keep them as normal insert statements and execute them asynchronously we'd get something more
+    like this:
+</div>
+<div><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://2.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXQ/9IXNl2Pz-pM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://2.bp.blogspot.com/-7HGmZMvPUMo/VNi-PTMHztI/AAAAAAAAAXQ/9IXNl2Pz-pM/s1600/Screenshot%2B2015-02-09%2B14.03.16.png"
+                                                                              height="257" width="320"/></a></div>
+    <br/></div>
+<div><br/></div>
+<div><br/></div>
+<div>Perfect! Each node has roughly the same work to do. Not so naive after all :)</div>
+<div><h4><br/></h4><h4>So when should you use unlogged batches?</h4></div>
+<div><br/>How about if we wanted to implement the following method:</div>
+<div><br/></div>
+<div>
+    <script src="https://gist.github.com/chbatey/aca06fd4daa8d999681d.js"></script>
+</div>
+<div><br/></div>
+<div>Looks similar - what's the difference? Well customer id is the partition key, so this will be no more coordination
+    work than a single insert and it can be done with a single operation at the storage layer. What does this look like
+    with orange circles and black arrows?<br/><br/>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://2.bp.blogspot.com/-vf9q_XQr85E/VNjFzOgt8QI/AAAAAAAAAXg/Y-3Y9wf6Y30/s1600/Screenshot%2B2015-02-09%2B14.35.37.png"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://2.bp.blogspot.com/-vf9q_XQr85E/VNjFzOgt8QI/AAAAAAAAAXg/Y-3Y9wf6Y30/s1600/Screenshot%2B2015-02-09%2B14.35.37.png"
+                                                                              height="314" width="320"/></a></div>
+    <br/></div>
+<div>Simple! Again I've left out replication to make it comparable to the previous diagrams.<br/><br/><h4>
+    Conclusion</h4></div>
+<div><br/></div>
+<div>Most of the time you don't want to use unlogged batches with Cassandra. The time you should consider it is when you
+    have multiple inserts/updates for the same partition key. This allows the driver to send the request in a single
+    message and the server to handle it with a single storage action. If batches contain updates/inserts for multiple
+    partitions you eventually just overload coordinators and have a higher likelihood of failure.<br/><br/>The code
+    examples are on github <a href="https://github.com/chbatey/cassandra-anti-patterns/tree/master"
+                              target="_blank">here</a>.
+</div>
+<div><br/></div>

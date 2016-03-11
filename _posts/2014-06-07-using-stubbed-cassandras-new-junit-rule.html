@@ -13,4 +13,14 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-48420071246011488
 blogger_orig_url: http://christopher-batey.blogspot.com/2014/06/using-stubbed-cassandras-new-junit-rule.html
 ---
 
-In my <a href="http://christopher-batey.blogspot.co.uk/2014/05/using-stubbed-cassandra-unit-testing.html">first post</a> about unit testing Java applications that use Cassandra you had to start Scassandra before your test, reset it between tests and finally stop it before it after your tests. Since then I've accepted a pull request which hides all this away in a JUnit rule.<br /><br />So the old code in your tests looked like this for starting Scassandra:<br /><br /><script src="https://gist.github.com/chbatey/17dfd09489374da31d65.js"></script><br/>This for stopping Scassandra:<br/><br/><script src="https://gist.github.com/chbatey/1bf65d60a7453cb3f104.js"></script><br/>And this for resetting Scassandra between tests:<br/><br/><script src="https://gist.github.com/chbatey/18f3e260c725afb24ca9.js"></script><br/>Now you can simply do this:<br /><br /><script src="https://gist.github.com/chbatey/04fbaac40fd70e69c672.js"></script><br />Assigning it to a ClassRule means that it will start Scassandra before all your tests and stop it after all your tests. Then assigning it to a regular Rule means that the Activity client and Priming client will be reset between tests.  
+In my <a href="http://christopher-batey.blogspot.co.uk/2014/05/using-stubbed-cassandra-unit-testing.html">first
+    post</a> about unit testing Java applications that use Cassandra you had to start Scassandra before your test, reset it between tests and finally stop it before it after your tests. Since then I've accepted a pull request which hides all this away in a JUnit rule.
+<br/><br/>So the old code in your tests looked like this for starting Scassandra:<br/><br/>
+<script src="https://gist.github.com/chbatey/17dfd09489374da31d65.js"></script><br/>This for stopping Scassandra:<br/>
+<br/>
+<script src="https://gist.github.com/chbatey/1bf65d60a7453cb3f104.js"></script>
+<br/>And this for resetting Scassandra between tests:<br/><br/>
+<script src="https://gist.github.com/chbatey/18f3e260c725afb24ca9.js"></script><br/>Now you can simply do this:<br/>
+<br/>
+<script src="https://gist.github.com/chbatey/04fbaac40fd70e69c672.js"></script>
+<br/>Assigning it to a ClassRule means that it will start Scassandra before all your tests and stop it after all your tests. Then assigning it to a regular Rule means that the Activity client and Priming client will be reset between tests.

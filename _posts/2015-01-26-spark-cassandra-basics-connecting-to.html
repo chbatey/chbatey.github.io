@@ -14,4 +14,117 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-37340622420261662
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/01/spark-cassandra-basics-connecting-to.html
 ---
 
-A lot of people are getting excited about Apache Spark. The release of the open source <a href="https://github.com/datastax/spark-cassandra-connector" target="_blank">Cassandra connector</a>&nbsp;makes a technology like Spark even more accessible. Previously to get going you'd need a Hadoop infrastructure, now you can do away with all that and start using Spark directly against Cassandra, no HDFS required.<br /><br /><a href="http://christopher-batey.blogspot.co.uk/2015/01/spark-12-with-cassandra-21-setting-up.html" target="_blank">My last two posts on the topic were all about setting up a vagrant VM with Cassandra and Spark&nbsp;</a>installed. That's all well and good if you already working in the JVM ecosystem, you know what vagrant and Ansible are and you love your self a bit of SBT, but now it is time to take a step back. This post is aimed at getting you started with Spark and Cassandra without the assumption you know what sbt assembly means! By the end of this one the goal is to be able to execute (and understand what is going on) Spark/Cassandra jobs in the Spark REPL, and the next article will be submitting a standalone job.<br /><br />I'll assume you have Cassandra installed and that you have downloaded a <a href="https://spark.apache.org/downloads.html" target="_blank">Spark bundle from their website</a>. It doesn't matter which version of Hadoop it has been built against as we're not going to use Hadoop. If you don't have a locally running Cassandra instance I suggest you just use the VM from the previous article, <a href="http://christopher-batey.blogspot.co.uk/2013/10/installing-cassandra-20-on-ubuntu.html" target="_blank">follow this article for Ubuntu</a>, use homebrew if you are on Mac OSX or if all else fails just<a href="http://cassandra.apache.org/download/" target="_blank"> download the zip from the Apache website</a>.<br /><br />So first things first... why should you be excited about his?<br /><br /><ul><li>If you're already using Cassandra your data is already distributed and replicated, the Cassandra connector for Spark is aware of this distribution and can bring the computation to the data, this means it is going to be FAST</li><li>Scala and the JVM might seem scary at first but Scala is an awesome language for writing data transformations</li><li>The Spark-Shell: this is a REPL we can use for testing out code, simply put: it is awesome</li><li>Spark can also connect with other data sources: files, RDMSs etc, which means you can do analytics combining data in Cassandra and systems like MySQL</li><li>Spark also supports streaming, meaning we can combine new data in semi-real time with out batch processing</li><li>Most importantly, you don't need to extract-transform-load your data from your operational database and put it in your batch processing system e.g. Hadoop</li></ul><h2>Lets get going</h2><div>So what do we need to get all this magic working?</div><div><ul><li>Java - Java 7 or 8</li><li><a href="http://www.scala-sbt.org/" target="_blank">SBT</a>&nbsp;- any 0.13.* will work. This is build tool used by the majority of Scala projects (Spark be Scala)</li><li><a href="http://www.scala-lang.org/download/" target="_blank">Scala</a>&nbsp;- Spark doesn't officially support 2.11 yet so get 2.10</li><li>A Cassandra cluster</li><li>A Spark installation (we're going simple this time so all on one computer)</li><li>The Cassandra Spark connector with all of its dependencies bundled on the the classpath of the spark-shell for interactive use</li><li>A fat jar with all our dependencies if we want to submit a job to a cluster (for the next post)</li></ul><div class="separator" style="clear: both; text-align: center;"><a href="http://1.bp.blogspot.com/-30YmswbnbcU/VMZIvJWu90I/AAAAAAAAAWY/RqpwdJlT4d8/s1600/download.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://1.bp.blogspot.com/-30YmswbnbcU/VMZIvJWu90I/AAAAAAAAAWY/RqpwdJlT4d8/s1600/download.jpg" height="92" width="320" /></a></div><div><br /></div><div>Hold up: jargon alert. Bundled dependencies, classpath? Fatman?</div></div><div><br /></div><div>Both Cassandra and Spark run on the JVM, we don't really care about Cassandra and we're not submitting code to run inside Cassandra, but that is exactly what we're going to do with Spark.</div><div><br /></div><div>That means all the code and libraries that we use are going to have to go everywhere our computation goes. This is because Spark distributes your computation across a cluster of computers. So we have to be kind and bundle all our code&nbsp;+ all the dependencies we use (other jar files e.g for logging). The JVM classpath is just how you tell the JVM where all your jars are.&nbsp;</div><div><br /></div><h4>Getting the Spark-Cassandra connector on the classpath</h4><div><br />If you're from JVM land you probably are used to doing things like "just build a fat jar and put it on the classpath" if you're not then that is just a lot of funny words. So the connector is not part of core Spark, so you can't use it by default in the spark-shell. To do that you need to put the connector <b>and all its dependencies</b>&nbsp;on the classpath for the spark-shell. This sounds tedious right? You'd have to go and look at the build system of the connector and work out what it depends on. Welcome to JVM dependency hell.&nbsp;</div><div><br /></div><div>SBT, Maven, Gradle to the rescue (sort of). Virtually all JVM languages have a build system that allow you to declare dependencies, then it is the build system's responsibility to go get them from magic online locations (maven central) when you build your project. In Scala land this is SBT&nbsp;+ Ivy.</div><div><br /></div><div>When you come to distribute a JVM based application it is very kind to your users to build a far jat, or an "executable jar". This contains your code&nbsp;+ all your dependencies so that it runs by its self, well apart from depending on a Java Runtime.&nbsp;</div><div><br /></div><div>So what we need to do is take the connector and use SBT&nbsp;+ the assembly plugin to build our selves a fat jar. The Spark-Cassandra connector already has all the necesary config in its build scripts so we're just going to check it out and run "sbt assembly".</div><br /><br /><script src="https://gist.github.com/chbatey/8d091963204c8aeb2db1.js"></script> <br />Lets take this line by line:<br /><ol><li>Line 1: Clone the Spark-Connector repo</li><li>Line 11: Run the SBT assembly command</li><li>Wait for ages</li><li>Line 14: Tells us where SBT has put the fat jar</li></ol><div>Now it is time to use this jar in the Spark Shell:</div><div><br /></div><script src="https://gist.github.com/chbatey/017321c58e234d920d79.js"></script> <br /><div>Nothing fancy here, just gone into the bin directory of where I unzipped Spark and ran spark-shell --help. The option we're looking for is <b>--jars</b>. This is how we add our magical fat jar onto the classpath of the spark-shell. If we hadn't built a fat jar we'd be adding 10s of jars here!</div><br />However before we launch spark-shell we're going to add some properties to tell spark where Cassandra is, in the file (you'll need to create it): {Spark Install}/conf/spark-defaults.conf add:<br /><br /><b>&nbsp;spark.cassandra.connection.host=192.168.10.11</b><br /><b><br /></b>Replace the IP with localhost if your Cassandra cluster is running locally. Then start up Spark-shell with the --jars option:<br /><br /><script src="https://gist.github.com/chbatey/2f19f493b7d653a31415.js"></script> Now lets look at the important bits:<br /><ol><li>Line 1: Starting spark-shell with --jars pointing to the fat jar we built</li><li>Line 10: Spark confirming that it has picked up the connector fat jar</li><li>Line 11: Spark confirming that it has created us a SparkContext</li><li>Line 13: Import the connector classes, Scala has the ability to extend existing classes. The effect of this import is that we now have cassandra methods on our SparkConext</li><li>Line 16: Create a Spark RDD from a Cassandra table "kv" in the "test" keyspace</li><li>Line 19: Turn the RDD into an array (forcing it to complete the execution) and print the rows</li></ol><div>Well that's all folks, next post will be about submitting jobs rather than using the spark-shell.</div><br /><br /><br />
+A lot of people are getting excited about Apache Spark. The release of the open source <a
+        href="https://github.com/datastax/spark-cassandra-connector" target="_blank">Cassandra
+    connector</a>&nbsp;makes a technology like Spark even more accessible. Previously to get going you'd need a Hadoop infrastructure, now you can do away with all that and start using Spark directly against Cassandra, no HDFS required.
+<br/><br/><a href="http://christopher-batey.blogspot.co.uk/2015/01/spark-12-with-cassandra-21-setting-up.html"
+             target="_blank">My last two posts on the topic were all about setting up a vagrant VM with Cassandra and
+    Spark&nbsp;</a>installed. That's all well and good if you already working in the JVM ecosystem, you know what vagrant and Ansible are and you love your self a bit of SBT, but now it is time to take a step back. This post is aimed at getting you started with Spark and Cassandra without the assumption you know what sbt assembly means! By the end of this one the goal is to be able to execute (and understand what is going on) Spark/Cassandra jobs in the Spark REPL, and the next article will be submitting a standalone job.
+<br/><br/>I'll assume you have Cassandra installed and that you have downloaded a <a
+        href="https://spark.apache.org/downloads.html" target="_blank">Spark bundle from their
+    website</a>. It doesn't matter which version of Hadoop it has been built against as we're not going to use Hadoop. If you don't have a locally running Cassandra instance I suggest you just use the VM from the previous article,
+<a href="http://christopher-batey.blogspot.co.uk/2013/10/installing-cassandra-20-on-ubuntu.html" target="_blank">follow
+    this article for Ubuntu</a>, use homebrew if you are on Mac OSX or if all else fails just<a
+        href="http://cassandra.apache.org/download/" target="_blank"> download the zip from the Apache website</a>.<br/>
+<br/>So first things first... why should you be excited about his?<br/><br/>
+<ul>
+    <li>If you're already using Cassandra your data is already distributed and replicated, the Cassandra connector for
+        Spark is aware of this distribution and can bring the computation to the data, this means it is going to be FAST
+    </li>
+    <li>Scala and the JVM might seem scary at first but Scala is an awesome language for writing data transformations
+    </li>
+    <li>The Spark-Shell: this is a REPL we can use for testing out code, simply put: it is awesome</li>
+    <li>Spark can also connect with other data sources: files, RDMSs etc, which means you can do analytics combining
+        data in Cassandra and systems like MySQL
+    </li>
+    <li>Spark also supports streaming, meaning we can combine new data in semi-real time with out batch processing</li>
+    <li>Most importantly, you don't need to extract-transform-load your data from your operational database and put it
+        in your batch processing system e.g. Hadoop
+    </li>
+</ul><h2>Lets get going</h2>
+<div>So what do we need to get all this magic working?</div>
+<div>
+    <ul>
+        <li>Java - Java 7 or 8</li>
+        <li><a href="http://www.scala-sbt.org/" target="_blank">SBT</a>&nbsp;- any 0.13.* will work. This is build tool
+            used by the majority of Scala projects (Spark be Scala)
+        </li>
+        <li><a href="http://www.scala-lang.org/download/" target="_blank">Scala</a>&nbsp;- Spark doesn't officially
+            support 2.11 yet so get 2.10
+        </li>
+        <li>A Cassandra cluster</li>
+        <li>A Spark installation (we're going simple this time so all on one computer)</li>
+        <li>The Cassandra Spark connector with all of its dependencies bundled on the the classpath of the spark-shell
+            for interactive use
+        </li>
+        <li>A fat jar with all our dependencies if we want to submit a job to a cluster (for the next post)</li>
+    </ul>
+    <div class="separator" style="clear: both; text-align: center;"><a
+            href="http://1.bp.blogspot.com/-30YmswbnbcU/VMZIvJWu90I/AAAAAAAAAWY/RqpwdJlT4d8/s1600/download.jpg"
+            imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0"
+                                                                              src="http://1.bp.blogspot.com/-30YmswbnbcU/VMZIvJWu90I/AAAAAAAAAWY/RqpwdJlT4d8/s1600/download.jpg"
+                                                                              height="92" width="320"/></a></div>
+    <div><br/></div>
+    <div>Hold up: jargon alert. Bundled dependencies, classpath? Fatman?</div>
+</div>
+<div><br/></div>
+<div>Both Cassandra and Spark run on the JVM, we don't really care about Cassandra and we're not submitting code to run
+    inside Cassandra, but that is exactly what we're going to do with Spark.
+</div>
+<div><br/></div>
+<div>That means all the code and libraries that we use are going to have to go everywhere our computation goes. This is
+    because Spark distributes your computation across a cluster of computers. So we have to be kind and bundle all our
+    code&nbsp;+ all the dependencies we use (other jar files e.g for logging). The JVM classpath is just how you tell
+    the JVM where all your jars are.&nbsp;</div>
+<div><br/></div><h4>Getting the Spark-Cassandra connector on the classpath</h4>
+<div><br/>If you're from JVM land you probably are used to doing things like "just build a fat jar and put it on the
+    classpath" if you're not then that is just a lot of funny words. So the connector is not part of core Spark, so you
+    can't use it by default in the spark-shell. To do that you need to put the connector <b>and all its dependencies</b>&nbsp;on
+    the classpath for the spark-shell. This sounds tedious right? You'd have to go and look at the build system of the
+    connector and work out what it depends on. Welcome to JVM dependency hell.&nbsp;</div>
+<div><br/></div>
+<div>SBT, Maven, Gradle to the rescue (sort of). Virtually all JVM languages have a build system that allow you to
+    declare dependencies, then it is the build system's responsibility to go get them from magic online locations (maven
+    central) when you build your project. In Scala land this is SBT&nbsp;+ Ivy.
+</div>
+<div><br/></div>
+<div>When you come to distribute a JVM based application it is very kind to your users to build a far jat, or an
+    "executable jar". This contains your code&nbsp;+ all your dependencies so that it runs by its self, well apart from
+    depending on a Java Runtime.&nbsp;</div>
+<div><br/></div>
+<div>So what we need to do is take the connector and use SBT&nbsp;+ the assembly plugin to build our selves a fat jar.
+    The Spark-Cassandra connector already has all the necesary config in its build scripts so we're just going to check
+    it out and run "sbt assembly".
+</div><br/><br/>
+<script src="https://gist.github.com/chbatey/8d091963204c8aeb2db1.js"></script> <br/>Lets take this line by line:<br/>
+<ol>
+    <li>Line 1: Clone the Spark-Connector repo</li>
+    <li>Line 11: Run the SBT assembly command</li>
+    <li>Wait for ages</li>
+    <li>Line 14: Tells us where SBT has put the fat jar</li>
+</ol>
+<div>Now it is time to use this jar in the Spark Shell:</div>
+<div><br/></div>
+<script src="https://gist.github.com/chbatey/017321c58e234d920d79.js"></script> <br/>
+<div>Nothing fancy here, just gone into the bin directory of where I unzipped Spark and ran spark-shell --help. The
+    option we're looking for is <b>--jars</b>. This is how we add our magical fat jar onto the classpath of the
+    spark-shell. If we hadn't built a fat jar we'd be adding 10s of jars here!
+</div>
+<br/>However before we launch spark-shell we're going to add some properties to tell spark where Cassandra is, in the file (you'll need to create it): {Spark Install}/conf/spark-defaults.conf add:
+<br/><br/><b>&nbsp;spark.cassandra.connection.host=192.168.10.11</b><br/>
+<b><br/></b>Replace the IP with localhost if your Cassandra cluster is running locally. Then start up Spark-shell with the --jars option:
+<br/><br/>
+<script src="https://gist.github.com/chbatey/2f19f493b7d653a31415.js"></script> Now lets look at the important bits:
+<br/>
+<ol>
+    <li>Line 1: Starting spark-shell with --jars pointing to the fat jar we built</li>
+    <li>Line 10: Spark confirming that it has picked up the connector fat jar</li>
+    <li>Line 11: Spark confirming that it has created us a SparkContext</li>
+    <li>Line 13: Import the connector classes, Scala has the ability to extend existing classes. The effect of this
+        import is that we now have cassandra methods on our SparkConext
+    </li>
+    <li>Line 16: Create a Spark RDD from a Cassandra table "kv" in the "test" keyspace</li>
+    <li>Line 19: Turn the RDD into an array (forcing it to complete the execution) and print the rows</li>
+</ol>
+<div>Well that's all folks, next post will be about submitting jobs rather than using the spark-shell.</div><br/><br/>
+<br/>

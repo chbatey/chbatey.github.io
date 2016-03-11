@@ -11,4 +11,116 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-58763086412925021
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/02/7-languages-in-7-weeks-ruby-day-3.html
 ---
 
-<br /><h3>Ruby Day 3: Serious change&nbsp;</h3><div>The final day on Ruby is all about metaprogramming. It takes you through:</div><div><ul><li>Adding methods to open classes</li><li>Using method missing to produce very human readable syntax</li><li>Adding functionality to classes via Modules</li></ul><div>Having used Java reflection, Java IDL Dynamic Invocation Interface (DII) and the Java IDL Dynamic Seketon Interface extensively when I used to develop IBM's Websphere Message Broker I know how cumbersome any form of metaprogramming is in Java. So I enjoyed playing around with a language that does it much better!</div></div><div><br /></div><div>Now to the Self study. Only one this time! Modify the Csv application to support an each method to return a CsvRow object. E.g for the following csv file:</div><div><br /></div><div><span style="font-family: Courier New, Courier, monospace;">one, two</span></div><div><span style="font-family: Courier New, Courier, monospace;">lions, tigers</span></div><div><br /></div><div>allow an API that works like this:</div><div><br /></div><div><span style="font-family: Courier New, Courier, monospace;">csv = RubyCsv.new</span></div><div><span style="font-family: Courier New, Courier, monospace;">csv.each{|row| puts row.one}</span></div><div><br /></div><div>This should print "lions".</div><div><br /></div><div>Well I decided to work with the following input:</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace;">one, two, three</span></div><div><span style="font-family: Courier New, Courier, monospace;">1, 2, 3&nbsp;</span></div><div><span style="font-family: Courier New, Courier, monospace;">uno, dos, tres</span></div></div><div><br /></div><div>And here is my solution using modules and method missing:</div><div><br /></div><div><div><span style="font-family: Courier New, Courier, monospace;">module ActsAsCsv</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def self.included(base)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; base.extend ClassMethods</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; module ClassMethods</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def acts_as_csv</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; include InstanceMethods</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; module InstanceMethods</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def read</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @csv_contents = []</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; filename = self.class.to_s.downcase + '.txt'</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; file = File.new(filename)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @headers = file.gets.chomp.split(', ')</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; file.each &nbsp;do |row|</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; @csv_contents &lt;&lt; row.chomp.split(', ')</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def each(&amp;block)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @csv_contents.each_index do |index|</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; hash = Hash[@headers.zip @csv_contents[index]]</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; block.call(CsvRow.new(hash)) &nbsp;</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; attr_accessor :headers, :csv_contents</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; read</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">class RubyCsv</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; include ActsAsCsv</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; acts_as_csv</span></div><div><span style="font-family: Courier New, Courier, monospace;">end</span></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;">class CsvRow</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize(arg)</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @arg = arg</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp;&nbsp;</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def method_missing name, *args</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; key = name.to_s</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; return @arg[key]</span></div><div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div><div><span style="font-family: Courier New, Courier, monospace;">end</span></div></div><div><span style="font-family: Courier New, Courier, monospace;"><br /></span></div><div><span style="font-family: Courier New, Courier, monospace;"></span><br /><div><span style="font-family: Courier New, Courier, monospace;">m = RubyCsv.new</span></div><span style="font-family: Courier New, Courier, monospace;"><div>m.each do |row|&nbsp;</div><div>&nbsp; puts row.send(ARGV[0])</div><div>end</div><div><br /></div></span></div><div><br /></div><div>And that is it for Ruby!</div>
+<br/><h3>Ruby Day 3: Serious change&nbsp;</h3>
+<div>The final day on Ruby is all about metaprogramming. It takes you through:</div>
+<div>
+    <ul>
+        <li>Adding methods to open classes</li>
+        <li>Using method missing to produce very human readable syntax</li>
+        <li>Adding functionality to classes via Modules</li>
+    </ul>
+    <div>Having used Java reflection, Java IDL Dynamic Invocation Interface (DII) and the Java IDL Dynamic Seketon
+        Interface extensively when I used to develop IBM's Websphere Message Broker I know how cumbersome any form of
+        metaprogramming is in Java. So I enjoyed playing around with a language that does it much better!
+    </div>
+</div>
+<div><br/></div>
+<div>Now to the Self study. Only one this time! Modify the Csv application to support an each method to return a CsvRow
+    object. E.g for the following csv file:
+</div>
+<div><br/></div>
+<div><span style="font-family: Courier New, Courier, monospace;">one, two</span></div>
+<div><span style="font-family: Courier New, Courier, monospace;">lions, tigers</span></div>
+<div><br/></div>
+<div>allow an API that works like this:</div>
+<div><br/></div>
+<div><span style="font-family: Courier New, Courier, monospace;">csv = RubyCsv.new</span></div>
+<div><span style="font-family: Courier New, Courier, monospace;">csv.each{|row| puts row.one}</span></div>
+<div><br/></div>
+<div>This should print "lions".</div>
+<div><br/></div>
+<div>Well I decided to work with the following input:</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace;">one, two, three</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">1, 2, 3&nbsp;</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">uno, dos, tres</span></div>
+</div>
+<div><br/></div>
+<div>And here is my solution using modules and method missing:</div>
+<div><br/></div>
+<div>
+    <div><span style="font-family: Courier New, Courier, monospace;">module ActsAsCsv</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def self.included(base)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; base.extend ClassMethods</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; module ClassMethods</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def acts_as_csv</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; include InstanceMethods</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; module InstanceMethods</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def read</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @csv_contents = []</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; filename = self.class.to_s.downcase + '.txt'</span>
+    </div>
+    <div><span
+            style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; file = File.new(filename)</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @headers = file.gets.chomp.split(', ')</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span
+            style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; file.each &nbsp;do |row|</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; @csv_contents &lt;&lt; row.chomp.split(', ')</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; def each(&amp;block)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; @csv_contents.each_index do |index|</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; hash = Hash[@headers.zip @csv_contents[index]]</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; &nbsp; block.call(CsvRow.new(hash)) &nbsp;</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; attr_accessor :headers, :csv_contents</span>
+    </div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; read</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">class RubyCsv</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; include ActsAsCsv</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; acts_as_csv</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">class CsvRow</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def initialize(arg)</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; @arg = arg</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp;&nbsp;</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; def method_missing name, *args</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; key = name.to_s</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; &nbsp; return @arg[key]</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">&nbsp; end</span></div>
+    <div><span style="font-family: Courier New, Courier, monospace;">end</span></div>
+</div>
+<div><span style="font-family: Courier New, Courier, monospace;"><br/></span></div>
+<div><span style="font-family: Courier New, Courier, monospace;"></span><br/>
+    <div><span style="font-family: Courier New, Courier, monospace;">m = RubyCsv.new</span></div>
+    <span style="font-family: Courier New, Courier, monospace;"><div>m.each do |row|&nbsp;</div><div>&nbsp; puts
+        row.send(ARGV[0])
+    </div><div>end</div><div><br/></div></span></div>
+<div><br/></div>
+<div>And that is it for Ruby!</div>

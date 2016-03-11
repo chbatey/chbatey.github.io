@@ -15,4 +15,28 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-67910912882140496
 blogger_orig_url: http://christopher-batey.blogspot.com/2013/09/scala-what-logging-library-to-use.html
 ---
 
-<div class="p1">Having investigated a few options I have decided on SLF4J + Logback + Grizzled. The project I am currently on uses Scalatra - this matches their solution.<br /><br />Three libraries?? That sounds overkill but it is in fact very simple.<br /><br />SLF4J + Logback are common place in Java projects. SLF4J is logging facade - basically a set of interfaces to program to where as Logback is an implementation you put on your classpath at runtime. There are other implementations of SLF4J you can use such as Log4J. Grizzled is a Scala wrapper around SLF4J to give it Scala like usage.</div><div class="p2"><br /></div><div class="p1">Having worked on many Java projects that use SLF4J + Logback I'm used to seeing lines at the top of files that look like this:</div><div class="p1"></div><div class="p1"><pre>private static final Logger LOGGER = LoggerFactory.getLogger(SomeClass.class)</pre></div><div class="p1"></div><div class="p1">Fortunately Grizzled-SLF4J + traits help here.</div><div class="p1"><br /></div><div class="p1">Mixing in the Grizzled Logging trait allows you to write logging code like this:</div><div class="p1"><br /></div><script src="https://gist.github.com/chbatey/6560275.js"></script> This will produce logs like this:<br /><pre>09:57:11.169 [main] INFO com.batey.examples.SomeClass - Some information<br />09:57:11.172 [main] ERROR com.batey.examples.SomeClass - Something terrible</pre>The grizzled trait uses your class name as the logger name. Job done with less boilerplate than Java!<br /><br />Everything you need s on Maven central so can be added to your pom or sbt dependencies:<br />Grizzled:&nbsp;<a href="http://software.clapper.org/grizzled-slf4j/" target="_blank">Grizzled</a><br />Logback:&nbsp;<a href="http://logback.qos.ch/" target="_blank">Logback</a><br /><br />
+<div class="p1">Having investigated a few options I have decided on SLF4J + Logback + Grizzled. The project I am
+    currently on uses Scalatra - this matches their solution.<br/><br/>Three libraries?? That sounds overkill but it is
+    in fact very simple.<br/><br/>SLF4J + Logback are common place in Java projects. SLF4J is logging facade - basically
+    a set of interfaces to program to where as Logback is an implementation you put on your classpath at runtime. There
+    are other implementations of SLF4J you can use such as Log4J. Grizzled is a Scala wrapper around SLF4J to give it
+    Scala like usage.
+</div>
+<div class="p2"><br/></div>
+<div class="p1">Having worked on many Java projects that use SLF4J + Logback I'm used to seeing lines at the top of
+    files that look like this:
+</div>
+<div class="p1"></div>
+<div class="p1">
+    <pre>private static final Logger LOGGER = LoggerFactory.getLogger(SomeClass.class)</pre>
+</div>
+<div class="p1"></div>
+<div class="p1">Fortunately Grizzled-SLF4J + traits help here.</div>
+<div class="p1"><br/></div>
+<div class="p1">Mixing in the Grizzled Logging trait allows you to write logging code like this:</div>
+<div class="p1"><br/></div>
+<script src="https://gist.github.com/chbatey/6560275.js"></script> This will produce logs like this:<br/>
+<pre>09:57:11.169 [main] INFO com.batey.examples.SomeClass - Some information<br/>09:57:11.172 [main] ERROR com.batey.examples.SomeClass - Something terrible</pre>The grizzled trait uses your class name as the logger name. Job done with less boilerplate than Java!
+<br/><br/>Everything you need s on Maven central so can be added to your pom or sbt dependencies:<br/>Grizzled:&nbsp;<a
+        href="http://software.clapper.org/grizzled-slf4j/" target="_blank">Grizzled</a><br/>Logback:&nbsp;<a
+        href="http://logback.qos.ch/" target="_blank">Logback</a><br/><br/>
