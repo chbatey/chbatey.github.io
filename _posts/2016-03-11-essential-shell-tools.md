@@ -2,6 +2,7 @@
 layout: post
 title: 'Essential shell tools'
 author: Christopher Batey
+comments: true
 tags:
 - shell
 ---
