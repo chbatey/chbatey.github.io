@@ -7,6 +7,9 @@ tags:
 - cassandra
 ---
 
-Cassandra exposes a lot of metrics. This is a series of posts detailing some of
-the more important ones. 
+Cassandra exposes a lot of metrics. Lets have alook at them in a very rough
+order of importance:
+
+* [ClientRequest aka proxyhistograms](/cassandra-clientrequest-metrics.html) 
+* [ColumnFamily aka cfhistograms](/cassandra-columnfamily-metrics.html)
 
