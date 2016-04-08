@@ -12,4 +12,5 @@ order of importance:
 
 * [ClientRequest aka proxyhistograms](/cassandra-clientrequest-metrics.html) 
 * [ColumnFamily aka cfhistograms](/cassandra-columnfamily-metrics.html)
+* [TheadPool aka tpstats](/cassandra-tpstats.html)
 

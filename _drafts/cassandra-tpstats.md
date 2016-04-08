@@ -93,10 +93,6 @@ configured for Cassandra data directory. Which makes sense for spinning disks
 but if you're using SSDs you can typically increase this by setting the
 `memtable_flush_writers` property to allow concurrent flushes to disk.
 
-## Native-Transport-Requests
-
-TODO
-
 ## The rest
 
 If there are any other thread pools you'd like me to discuss then leave a
