@@ -131,7 +131,7 @@ combineHistograms(cfs.getSSTables(SSTableSet.CANONICAL), new GetHistogram()
 ```
 
 This is another metric useful for tuning datamodels as you don't want your
-partitions to contain too manyn cells. It is useful to check that you don't have
+partitions to contain too many cells. It is useful to check that you don't have
 any unbounded growrth. However I tend to look more at the size of a cell
 in bytes rather than cells.
 
