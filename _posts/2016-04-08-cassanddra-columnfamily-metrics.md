@@ -17,7 +17,7 @@ o.a.c.m.ColumnFamily.[keyspace name].[table name].{WriteLatency, ReadLatency, SS
 
 You can find all these metrics with the above pattern using `jconsole` and
 `graphite` using the techniques
-described in the previous posts however this post will stick to `nodetool`.
+described in the previous post however this post will stick to `nodetool`.
 
 Remember the simplified three layers of Cassandra:
 
@@ -47,16 +47,15 @@ Max             3.00         464228.84          74975.55               258      
 The `Write Latency` and `Read Latency` are what you'd expect. On this node 99% of
 writes took less than 24.60 microseconds and 99% of reads took less than
 1131.75 microseconds. These are very good figures and are from a high end SSD
-running `cassandra-stress`. Remember the entire operations take much longer
+running `cassandra-stress`. Remember the end to end operations take much longer
 than the above figures. 
 
 This is just the storage layer of Cassandra and many of
 these reads won't even have required disk access as it is all in the OS's page
 cache. 
 
-To see where these are updated in the C* code take a look at  `o.a.c.db.ReadCommand` for reads and
+To see where these are updated in the C* code take a look at `o.a.c.db.ReadCommand` for reads and
 `o.a.c.db.ColumnFamilyStore` for writes.
-
 
 Spending time looking at the output from `nodetool cfhistograms` I started to
 wonder why writes were always quicker than reads on Cassandra nodes that had
@@ -86,7 +85,7 @@ public void apply(PartitionUpdate update, UpdateTransaction indexer, OpOrder.Gro
 ```
 
 It is the call to `metric.writeLatncy.addNano` that appears to be in the output
-from `cfhistograms` and that is just a write to the memtable. The comment even
+from `cfhistograms` and that only covers the write to the memtable. The comment even
 suggests that the time to get the appropriate lock is not included in the
 timing.
 
@@ -132,10 +131,7 @@ combineHistograms(cfs.getSSTables(SSTableSet.CANONICAL), new GetHistogram()
 ```
 
 This is another metric useful for tuning datamodels as you don't want your
-partitions to contain too main cells. I tend to look more at the size of a cell
-in bytes rather than cells though.
-
-
-
-
+partitions to contain too manyn cells. It is useful to check that you don't have
+any unbounded growrth. However I tend to look more at the size of a cell
+in bytes rather than cells.
 
