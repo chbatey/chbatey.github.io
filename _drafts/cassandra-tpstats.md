@@ -71,7 +71,7 @@ configure in `cassandra.yml`.
 
 It probably goes without saying that Pending is bad and blocked is worse. That
 is not to say that they should always be 0. Take `ReadStage` and
-`MutationState`. Ideally I want Pending/Blocked to be 0 but if a spike of writes
+`MutationState`. Ideally I want Pending to be 0 but if a spike of writes
 or reads are sent to a Cassandra node of course it will get behind! But assuming
 that your `read_request_timeout` and `write_request_timeout` is being met your
 read/write will succeed. The issue if these figures are regularly high and you
@@ -102,4 +102,17 @@ TODO
 If there are any other thread pools you'd like me to discuss then leave a
 comment. The above are the ones I watch the most. 
 
-If you want to look into...
+If you want to look into a different thread pool I tend to start at
+`o.a.c.c.StageManager` where all the thread pools are created. 
+
+```
+stages.put(Stage.MUTATION, multiThreadedLowSignalStage(Stage.MUTATION, getConcurrentWriters()));
+stages.put(Stage.COUNTER_MUTATION, multiThreadedLowSignalStage(Stage.COUNTER_MUTATION, getConcurrentCounterWriters()));
+stages.put(Stage.VIEW_MUTATION, multiThreadedLowSignalStage(Stage.VIEW_MUTATION, getConcurrentViewWriters()));
+stages.put(Stage.READ, multiThreadedLowSignalStage(Stage.READ, getConcurrentReaders()));
+        
+```
+
+The construction of each of the stages pass on the max size thread pool size e.g.
+`getConcurrentWriters()`. It typically results to a call to `o.a.c.c.Config`
+which is a java class that matchs the structure of `cassandra.yml`.
