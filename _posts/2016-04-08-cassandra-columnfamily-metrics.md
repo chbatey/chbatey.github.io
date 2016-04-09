@@ -135,3 +135,73 @@ partitions to contain too many cells. It is useful to check that you don't have
 any unbounded growrth. However I tend to look more at the size of a cell
 in bytes rather than cells.
 
+## CF Stats
+
+As well as `nodetool cfhistograms` you can also get useful information using
+`nodetool cfstats`. It will get all tables in all keyspaces by default by
+default so typically you want to add in a fully qualified table name e.g
+`keyspace1.standard1`.
+
+```
+Keyspace: keyspace1
+        Read Count: 219
+        Read Latency: 1.6680365296803652 ms.
+        Write Count: 355554
+        Write Latency: 0.030735232904143955 ms.
+        Pending Flushes: 0
+                Table: standard1
+                SSTable count: 2
+                Space used (live): 84950548
+                Space used (total): 84950548
+                Space used by snapshots (total): 0
+                Off heap memory used (total): 397564
+                SSTable Compression Ratio: 0.0
+                Number of keys (estimate): 279495
+                Memtable cell count: 210655
+                Memtable data size: 9607920
+                Memtable off heap memory used: 0
+                Memtable switch count: 5
+                Local read count: 219
+                Local read latency: 1.669 ms
+                Local write count: 355768
+                Local write latency: 0.031 ms
+                Pending flushes: 0
+                Bloom filter false positives: 0
+                Bloom filter false ratio: 0.00000
+                Bloom filter space used: 349928
+                Bloom filter off heap memory used: 349912
+                Index summary off heap memory used: 47652
+                Compression metadata off heap memory used: 0
+                Compacted partition minimum bytes: 259
+                Compacted partition maximum bytes: 310
+                Compacted partition mean bytes: 310
+                Average live cells per slice (last five minutes): 0.0
+                Maximum live cells per slice (last five minutes): 0.0
+                Average tombstones per slice (last five minutes): 0.0
+                Maximum tombstones per slice (last five minutes): 0.0
+
+```
+
+These metrics are stored per `o.a.c.db.ColumnFamilyStore` in a field of type
+`o.a.c.metrics.TableMetrics` if you're looking at branch older than Cassandra 3
+then it used to be called `o.a.c.metrics.ColumnFamilyMetrics`. Ever so slowly it
+appears that Cassandra class names are beginning to catch up with the current
+terminology.
+
+TIL when looking at the code for these metrics they typically include the figure
+not just for the table but all indexes on that table as well. Cassandra's
+current secondary indexes are stored as internal Cassandra tables albeit with a
+different replication strategy.
+
+```java
+allMemtablesLiveDataSize = createTableGauge("AllMemtablesLiveDataSize", new Gauge<Long>()
+{
+   public Long getValue()
+   {
+      long size = 0;
+      for (ColumnFamilyStore cfs2 : cfs.concatWithIndexes())
+          size += cfs2.getTracker().getView().getCurrentMemtable().getLiveDataSize();
+      return size;
+   }
+});
+```

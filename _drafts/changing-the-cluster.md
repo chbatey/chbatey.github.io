@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'Chaning the Cassandra cluster'
+title: 'Changing the Cassandra cluster'
 author: Christopher Batey
 comments: true
 tags:
