@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'Cassandra User Defined Types'
+title: 'Cassandra User Defined Functions'
 author: Christopher Batey
 comments: true
 tags:
