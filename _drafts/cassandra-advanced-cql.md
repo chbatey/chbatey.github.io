@@ -13,6 +13,6 @@ implemented.
 
 * [User defined types](/cassandra-udts.html)
 * [User defined functions](/cassandra-udfs.html)
-* User defined aggregates - TODO
-* SASI indexes - TODO
-* Materialised Views - TODO
+* [User defined aggregates](/cassandra-udas.html)
+* [SASI indexes](/cassandra-sasi.html)
+* [Materialised Views](cassandra-mvs.html)
