@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'Cassandra: Changing the luster'
+title: 'Cassandra: Changing the cluster'
 author: Christopher Batey
 comments: true
 tags:
