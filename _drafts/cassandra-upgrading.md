@@ -18,6 +18,7 @@ Bad things can happen when you upgrade a cluster but as long as you follow a few
 There are scenarios where you can break these rules with specific versions but I never do it. The only exception is Cassandra 2.2 which I never intend to put in production.
 
 Then:
+
 * Repair before the upgrade
 * Then disable any repairs / make sure that no repairs are in progress
 * Remove any process that will modify the schema.
