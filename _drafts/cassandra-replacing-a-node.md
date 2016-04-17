@@ -45,3 +45,8 @@ Rather than bootsrapping and force removing it is better to start a new node wit
 This means the new node will take over the same token ranges as the old node and no unncessasry data movement is required.
 
 
+
+#### Post TODO
+
+* Track hints for the downed node / perge hints
+* Monitor boot strap porcess

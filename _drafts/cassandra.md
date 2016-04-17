@@ -18,6 +18,8 @@ Topics
 
 * [Changing clusters without downtime](/changing-the-cluster.html)
 * [Advanced / new features](/cassandra-advanced-cql.html)
-* [Metrics and monitoring](/cassandra-metrics.html)
+* [Metrics](/cassandra-metrics.html)
+* [Monitoring](/cassandra-monitoring.html)
+* [Command line tools](/cassandra-cli.html)
 * [Nodes down](/when-cassandra-burns.html)
 
