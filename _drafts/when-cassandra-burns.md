@@ -14,12 +14,18 @@ What do you need to do in various failure scenarios:
 * Node down for greater than hint window but less than gc_grace_seconds
 * Node down for longer than a gc_grace seconds
 
-## Less than hint window
+### Less than hint window
 
-## Greater than hint window
+### Greater than hint window
 
-## Greater than gc_grace seconds
+### Greater than gc_grace seconds
 
+### Todo
+
+* Endless compactions
+* Out of disk space
+* Ever growing partition
+* Tombstoness
 
 
 
