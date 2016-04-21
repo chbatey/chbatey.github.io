@@ -13,7 +13,7 @@ than waiting for applications to start experiencing errors.
 ## Tools
 
 * Monit
-* Nagios + Riemen  +  Graphite + Statsd or..
+* Nagios + Riemen  +  Graphite + Collectd or..
 * Prometheus (all of the above)
 * Logging: ELK (Elasticsearch, Logstash and Kibanna)
 * MX4J - JMX to HTTP
@@ -70,19 +70,17 @@ okay if your applications aren't seeing timeouts.
 
 Garbage collection.
 
-New gen pause rate.
+`New gen pause rate`.
 
-New gen total pause per time period.
+`New gen total pause per time period`
 
-Full GC.
-
-### Keyspace
+`Full GC`
 
 ### Table
 
-Max partition size.
-Number of partitions.
-Number of cells in a partition.
+* `Max partition size`
+* `Number of partitions`
+* `Number of cells in a partition`
 
 ## Things to think about
 
