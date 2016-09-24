@@ -87,7 +87,7 @@ Off to metrics database it goes:
 We then average them in metrics database:
 
 ```
-99 + 19 / 2 = 59
+(99 + 19) / 2 = 59
 ```
 
 Urgh 59? What is this made up number we are now graphing? Are 90% of customers
