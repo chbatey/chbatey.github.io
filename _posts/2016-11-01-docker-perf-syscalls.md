@@ -53,7 +53,7 @@ cpuacct.usage_percpu                                               tasks
 
 ```
 
-Okay so the cgroup for this container is `dockker/50993dd8689e561467739465a5491f0cf42a671783d4ad24870278118ee88149/`
+Okay so the cgroup for this container is `docker/50993dd8689e561467739465a5491f0cf42a671783d4ad24870278118ee88149/`
 
 To see what it is up to we can run perf on the host with that cgroup and the events we want to
 capture. Perf stat can record system calls and here is how we do it:
