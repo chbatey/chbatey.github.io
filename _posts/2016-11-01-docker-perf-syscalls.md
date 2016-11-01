@@ -11,7 +11,7 @@ tags:
 I'm a developer and now accidental platform person who now manages a lot of servers 
 all running Kubernetes/Docker and sometimes I wonder what on earth all the containers are up to.
 
-Well perf can tell us which system calls are bing made at a cgroup level. 
+Well perf can tell us which system calls are being made at a cgroup level. 
 
 Added [here](https://lwn.net/Articles/421574/) back in 2011 by Google.
 
