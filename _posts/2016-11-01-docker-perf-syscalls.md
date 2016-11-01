@@ -59,6 +59,8 @@ To see what it is up to we can run perf on the host with that cgroup and the eve
 capture. Perf stat can record system calls and here is how we do it:
 
 ```
+git:(master) ✗ sudo perf stat -e "syscalls:*" -G docker/50993dd8689e561467739465a5491f0cf42a671783d4ad24870278118ee88149 -a
+
                257      syscalls:sys_enter_sendto                                   
                257      syscalls:sys_exit_sendto                                    
                 98      syscalls:sys_enter_recvfrom                                   
