@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Using perf to spy on a docker conatiner's system calls"
+title: "Using perf to spy on a docker container's system calls"
 author: Christopher Batey
 comments: true
 tags:
