@@ -147,11 +147,11 @@ And then for a flame graph:
 Unsurprisingly we spend all our time in callout as it is busy calculating our
 primes.
 
-Here's my fork of perf-map-agent with the docker perf map scripts:
+[Here's my fork of perf-map-agent](https://github.com/chbatey/perf-map-agent) (branch docker-support) with the docker perf map scripts. 
 
 It assumes:
 
-* perf-map-agent is mounted inside the container at: xxx
+* perf-map-agent is mounted inside the container at: `/perf-map/`
 * you have root access on the container host
 * Jps is on the path inside the container
 * you have a single JVM inside the container
