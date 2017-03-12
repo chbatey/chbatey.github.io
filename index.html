@@ -1,23 +1,23 @@
 ---
 layout: default
 ---
-
 <div class="home">
+    <h3> I'm interested in and some times blog about: </h3>
+    <ul>
+        <li><a href="{{ '/jvm' | prepend: site.baseurl }}">Java, Scala and the JVM</a></li>
+        <li><a href="{{ '/cassandra' | prepend: site.baseurl }}">Cassandra</a></li>
+        <li><a href="{{ '/performance' | prepend: site.baseurl }}">Performance and Monitoring</a></li>
+        <li><a href="{{ '/nerd' | prepend: site.baseurl }}">General nerdery</a></li>
+        <!--<li><a href="{{ "/csharp" | prepend: site.baseurl }}">C# and the CLR</a></li>-->
+        <!--<li><a href="{{ "/fsharp" | prepend: site.baseurl }}">F#</a></li>-->
+        <!--<li><a href="{{ "/haskell" | prepend: site.baseurl }}">Haskell</a></li>-->
+    </ul>
 
-  <h1 class="page-heading">Posts</h1>
+    <p>Or you can view all posts <a href="{{ '/all' | prepend: site.baseurl }}">here</a>
+    or subscribe <a href="{{ '/feed.xml' | prepend: site.baseurl }}">via RSS</a></p>
 
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+    <br/>
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-      </li>
-    {% endfor %}
-  </ul>
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
 
 </div>

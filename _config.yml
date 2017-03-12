@@ -7,7 +7,7 @@
 
 # Site settings
 title: Stuff & Information
-email: christopher.batey@gmail.com
+#email: christopher.batey@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
   Christopher Batey's Tech Blog
 baseurl: "" # the subpath of your site, e.g. /blog

@@ -7,6 +7,7 @@ tags:
 - docker
 - perf
 - flame-graphs
+- jvm
 ---
 
 To learn about flame graphs and perf with Java see Brendon Gregg's

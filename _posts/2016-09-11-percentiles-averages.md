@@ -5,6 +5,7 @@ author: Christopher Batey
 comments: true
 tags:
 - stats
+- perf
 ---
 
 One of the first things I check when looking at a new dashboard is for the

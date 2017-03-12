@@ -5,6 +5,7 @@ author: Christopher Batey
 comments: true
 tags:
 - shell
+- nerd
 ---
 
 I spent far too much of my life on a computer using the default terminal
