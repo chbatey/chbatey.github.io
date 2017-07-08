@@ -9,13 +9,13 @@ tags:
 - func-scala
 ---
 
-In mainstream OO you often come across a layered or hexagonal architectures e.g.
+In mainstream OO you often come across a layered or hexagonal architectures with layers such as:
 
 * Web/Presentation
 * Core domain logic
-* Infrastructure e.g. Database access
+* Data access
 
-Where the goal is to keep your core domain logic pure and not tie it to specific databases and web frameworks.
+The goal being to keep your core domain logic pure and not tie it to specific databases and web frameworks.
 
 This is admirable goal and one we want to keep when we move to a FP style. 
 
