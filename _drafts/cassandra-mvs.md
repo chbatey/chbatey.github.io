@@ -7,6 +7,8 @@ tags:
 - cassandra
 ---
 
+Todo
+
 Cassandra materialised views (MVs) were introduced in Cassandra 3.0. I've
 [written
 about them before](/cassandra-30-materialised-views-in.html) they were released and discovered their semantics by a

@@ -8,9 +8,6 @@ languages including:
 
 * Scala
 * Java
-* Golang
-* C#
-* F#
 * Haskell
 
 I've built systems with a with a range of technologies such as:
@@ -20,4 +17,8 @@ I've built systems with a with a range of technologies such as:
 * Apache Spark
 * MySQL
 
-You can reach me on twitter at [@chbatey](https://twitter.com/chbatey).
+I'm passionate about my work and particularly enjoy studying program languages, type
+systems and distributed systems.
+
+You can reach me on twitter at [@chbatey](https://twitter.com/chbatey) or if you're
+interested in contacting me regardinging hiring me you can contact me at christopher [dot] batey [at] gmail [dot] com.
