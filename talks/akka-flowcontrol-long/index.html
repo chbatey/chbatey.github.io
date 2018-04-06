@@ -82,8 +82,8 @@ document.getElementsByTagName( 'head' )[0].appendChild( link );
   </li>
   <li>Network/IO
     <ul>
-      <li>Does a request over the network use a Thread?</li>
-      <li>Does accessing the file system use a Thread?</li>
+      <li>Network request use a Thread?</li>
+      <li>File system request use a Thread?</li>
     </ul>
   </li>
 </ul><aside class="notes">
@@ -94,9 +94,9 @@ document.getElementsByTagName( 'head' )[0].appendChild( link );
 </ul></aside></section><section>
 <h2><a href="#back-pressure" name="back-pressure" class="anchor"><span class="anchor-link"></span></a>Back pressure</h2>
 <ul>
-  <li>How do we stop a fast producer overloading a slow consumer?</li>
+  <li>Fast producers overload slow consumers?</li>
   <li>How is demand signalled?</li>
-  <li>How do we prevent bring data from a database at a faster rate than the client can consumer?</li>
+  <li>Rate of pulling data into memory from database?</li>
 </ul><aside class="notes">
 <ul>
   <li>8 mins</li>
@@ -295,19 +295,13 @@ document.getElementsByTagName( 'head' )[0].appendChild( link );
     }
   }
 }</code></pre>
-<pre class="prettyprint group-java"><code class="language-java">route(path(segment(&quot;user&quot;).slash(segment()), id -&gt;
-  get(() -&gt; {
-      CompletableFuture&lt;Optional&lt;User&gt;&gt; user =
-        dataAccess.lookupUser(id);
-      return onSuccess(user, (Optional&lt;User&gt; opUser) -&gt; {
-        if (opUser.isPresent()) {
-          return complete(opUser.get().serialise());
-        } else {
-          return complete(StatusCodes.NOT_FOUND);
-        }
-      });
-    }
-  )));</code></pre></section><section>
+<pre class="prettyprint group-java"><code class="language-java">get(() -&gt; {
+    CompletableFuture&lt;Optional&lt;User&gt;&gt; user =
+      dataAccess.lookupUser(id);
+    return onSuccess(user, (Optional&lt;User&gt; opUser) -&gt;
+      opUser.map(u -&gt; complete(u.serialise()))
+            .orElse(complete(StatusCodes.NOT_FOUND)));
+  }</code></pre></section><section>
 <h2><a href="#akka-http" name="akka-http" class="anchor"><span class="anchor-link"></span></a>Akka HTTP</h2>
 <pre class="prettyprint"><code class="language-scala">path(&quot;user&quot; / Segment) { name =&gt;
   get {
@@ -522,7 +516,7 @@ runnable.run()</code></pre><aside class="notes">
 <p>Java:</p>
 <pre class="prettyprint"><code class="language-java">Source.range(0, 20000000)
   .map(Object::toString)
-  .runForeach(str -&gt; System.out.println(str), materializer);</code></pre>
+  .runForeach(System.out::println, materializer);</code></pre>
 <p>Scala:</p>
 <pre class="prettyprint"><code class="language-scala">Source(0 to 20000000)
   .map(_.toString)
@@ -637,7 +631,9 @@ val n2: NotUsed = graph.run()</code></pre><aside class="notes">
 )</code></pre>
 <pre class="prettyprint group-java"><code class="language-scala">response.map {
   case HttpResponse(StatusCodes.OK, headers, entity, _) =&gt;
+
     val response: Source[ByteString, _] = entity.dataBytes
+
     response.via(Framing.delimiter(
       ByteString(&quot;\n&quot;), maximumFrameLength = 100, allowTruncation = true))
       .map(_.utf8String.parseJson.convertTo[Event])
@@ -648,7 +644,9 @@ val n2: NotUsed = graph.run()</code></pre><aside class="notes">
 )</code></pre>
 <pre class="prettyprint group-scala"><code class="language-scala">response.map {
   case HttpResponse(StatusCodes.OK, headers, entity, _) =&gt;
+
     val response: Source[ByteString, _] = entity.dataBytes
+
     response.via(Framing.delimiter(
       ByteString(&quot;\n&quot;), maximumFrameLength = 100, allowTruncation = true))
       .map(_.utf8String.parseJson.convertTo[Event])
