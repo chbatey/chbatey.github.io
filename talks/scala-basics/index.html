@@ -60,6 +60,8 @@ document.getElementsByTagName( 'head' )[0].appendChild( link );
   <p>Increasingly more complex</p></li>
   <li>A huge use case becoming popular in Java, async programming</li>
 </ul></aside></section><section>
+<h2><a href="#1-programming-languages" name="1-programming-languages" class="anchor"><span class="anchor-link"></span></a>1.Programming Languages</h2><aside class="notes">
+<p>Starting off really simple Semantics vs syntax</p></aside></section><section>
 <h2><a href="#scala-is-a-hybrid-functional-oo-language" name="scala-is-a-hybrid-functional-oo-language" class="anchor"><span class="anchor-link"></span></a>Scala is a Hybrid Functional / OO language</h2><aside class="notes">
 <ul>
   <li>Declarative vs imperative programming</li>
@@ -70,8 +72,6 @@ document.getElementsByTagName( 'head' )[0].appendChild( link );
   <li>Unique features. path dependent types, implicits</li>
   <li>I used to say you wrote two kinds of Scala</li>
 </ul></aside></section><section>
-<h2><a href="#1-programming-languages" name="1-programming-languages" class="anchor"><span class="anchor-link"></span></a>1.Programming Languages</h2><aside class="notes">
-<p>Starting off really simple Semantics vs syntax</p></aside></section><section>
 <h2><a href="#semantics-vs-syntax" name="semantics-vs-syntax" class="anchor"><span class="anchor-link"></span></a>Semantics vs Syntax</h2><aside class="notes">
 <ul>
   <li>You can learn the semantics of a language in a discussion with someone</li>
@@ -434,7 +434,7 @@ def deSerialisePerson: HttpRequest =&gt; Person = ???</code></pre>
 <pre class="prettyprint"><code class="language-scala">def map(f: A =&gt; B): Future[B]
 </code></pre>
 <pre class="prettyprint fragment"><code class="language-scala">val customerSaved: HttpRequest =&gt; Future[Customer] = hr =&gt;
-    fstStep(hr).flatMap(saveCustomer)</code></pre>
+  fstStep(hr).flatMap(saveCustomer)</code></pre>
 <pre class="prettyprint fragment"><code class="language-scala">val fullRequest: HttpRequest =&gt; Future[HttpResponse] = hr =&gt;
   customerSaved(hr).map(serialiseCustomer)</code></pre><aside class="notes">
 <ul>
@@ -444,27 +444,17 @@ def deSerialisePerson: HttpRequest =&gt; Person = ???</code></pre>
   <li>Very common pattern</li>
   <li>Java&rsquo;s optional and completable future have these methods</li>
 </ul></aside></section><section>
-<pre class="prettyprint"><code class="language-scala">val fullRequest2: HttpRequest =&gt; Future[HttpResponse] = hr =&gt; {
-  val person: Person = deSerialisePerson(hr)
-  for {
-    customer &lt;- createCustomer(person)
-    _ &lt;- saveCustomer(customer)
-  } yield serialiseCustomer(customer)
-}</code></pre><aside class="notes">
-<p>Notes</p></aside></section><section>
 <pre class="prettyprint"><code class="language-scala">f: A =&gt; Future[B]
 g: B =&gt; Future[C]
 
-g &lt;=&lt; f : A =&gt; Future[C]
-
-lift(fa: A =&gt; B): Future[A] =&gt; Future[B]
+g superCompose f : A =&gt; Future[C]
 
 </code></pre>
 <p><a href="http://eed3si9n.com/herding-cats/composing-monadic-functions.html">http://eed3si9n.com/herding-cats/composing-monadic-functions.html</a></p>
 <p><a href="https://underscore.io/books/scala-with-cats/">https://underscore.io/books/scala-with-cats/</a></p><aside class="notes">
 <p>Notes</p></aside></section><section>
-<h3><a href="#ready-to-do-all-this-again-with-either-" name="ready-to-do-all-this-again-with-either-" class="anchor"><span class="anchor-link"></span></a>Ready to do all this again with Either?</h3>
-<pre class="prettyprint fragment"><code class="language-scala">class Abstracted[F[_] : Mappable] {
+<h3><a href="#ready-to-do-all-this-again-with-either-" name="ready-to-do-all-this-again-with-either-" class="anchor"><span class="anchor-link"></span></a>Ready to do all this again with Either?</h3></section><section>
+<pre class="prettyprint"><code class="language-scala">abstract class Abstracted[F[_] : Mappable] {
   def serialiseCustomer: Customer =&gt; HttpResponse = ???
   def deSerialisePerson: HttpRequest =&gt; Person = ???
   def createCustomer: Person =&gt; F[Customer] = ???
@@ -475,6 +465,17 @@ lift(fa: A =&gt; B): Future[A] =&gt; Future[B]
   def flatMap[A, B](fa: F[A])(f: A =&gt; F[B]): F[B]
 }</code></pre><aside class="notes">
 <p>Notes</p></aside></section><section>
+<pre class="prettyprint"><code class="language-scala">val first: HttpRequest =&gt; F[Customer] =
+  deSerialisePerson andThen
+    createCustomer</code></pre>
+<pre class="prettyprint segment"><code class="language-scala">val fullRequest: HttpRequest =&gt; F[HttpResponse] = hr =&gt;
+  first(hr)
+    .flatMap(saveCustomer)
+    .map(serialiseCustomer)
+</code></pre>
+<pre class="prettyprint segment"><code class="language-scala">val withAFuture = new Abstracted[Future] {}
+val whatTypeIsThis: HttpRequest =&gt; Future[HttpResponse] =
+  withAFuture.fullRequest</code></pre></section><section>
 <h3><a href="#how-useful-is-this-" name="how-useful-is-this-" class="anchor"><span class="anchor-link"></span></a>How useful is this?</h3>
 <ul>
   <li>Ratpack Promise</li>
@@ -553,8 +554,6 @@ case class Dog(name: String, status: String)</code></pre>
   <li>Be prepared to be a beginner</li>
   <li>Pick a programming paradigm</li>
   <li>Pick a style guideline</li>
-  <li>Pick a DI style</li>
-  <li>Include static analysis</li>
 </ul><aside class="notes">
 <ul>
   <li>Guide should dictate use of implicits</li>
