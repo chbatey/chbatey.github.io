@@ -468,12 +468,12 @@ g superCompose f : A =&gt; Future[C]
 <pre class="prettyprint"><code class="language-scala">val first: HttpRequest =&gt; F[Customer] =
   deSerialisePerson andThen
     createCustomer</code></pre>
-<pre class="prettyprint segment"><code class="language-scala">val fullRequest: HttpRequest =&gt; F[HttpResponse] = hr =&gt;
+<pre class="prettyprint fragment"><code class="language-scala">val fullRequest: HttpRequest =&gt; F[HttpResponse] = hr =&gt;
   first(hr)
     .flatMap(saveCustomer)
     .map(serialiseCustomer)
 </code></pre>
-<pre class="prettyprint segment"><code class="language-scala">val withAFuture = new Abstracted[Future] {}
+<pre class="prettyprint fragment"><code class="language-scala">val withAFuture = new Abstracted[Future] {}
 val whatTypeIsThis: HttpRequest =&gt; Future[HttpResponse] =
   withAFuture.fullRequest</code></pre></section><section>
 <h3><a href="#how-useful-is-this-" name="how-useful-is-this-" class="anchor"><span class="anchor-link"></span></a>How useful is this?</h3>
