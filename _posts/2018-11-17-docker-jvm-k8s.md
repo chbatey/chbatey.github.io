@@ -94,7 +94,7 @@ containers to Kubernetes. There will be many containers with JVMs running on eac
 each have gotten to burst and use all the cores for say a big parallel GC and if all of them happen to do it
 at the same time then they'd get a fair share. Now the GC threads will based on shares, which are typically set
 quite low in these environments with the expectation they can burst. The same will happen for the ForkJoin pool
-which is used for things like parallel streams. Before this support you'd instead end up with too many threads,
+which is used for things like parallel streams. Before this support you would have ended up with too many threads,
 especially if the underlying host has many cores.
 
 I'd expect to see utilisation in container clusters to drop with the defaults. 
