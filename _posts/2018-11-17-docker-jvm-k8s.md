@@ -9,7 +9,7 @@ tags:
 - kubernetes
 ---
 
-Fourish years ago I worked with JVMs inside Docker running in Kubernetes. I discussed some of the pain points 
+Threeish years ago I worked with JVMs inside Docker running in Kubernetes. I discussed some of the pain points 
 in a conference talk you can watch [here](https://www.youtube.com/watch?v=w1rZOY5gbvk), but you shouldn't as it is
 out of date.
 
