@@ -16,14 +16,13 @@ out of date.
 Since then the JVM has moved on. We now have:
 
 * `-XX:+UseCGroupMemoryLimitForHeap`
-  * Added in the later JDK8 patch releases where the `cgroup.limit_in_bytes` is used for JVM ergonomics where as previous versions 
-    would base decisions based on how much host's RAM
+  * Added in the later JDK8 patch releases where the `cgroup.limit_in_bytes` is used for JVM ergonomics 
   * Removed in JDK10 with the behaviour becoming the default and can be turned off with `UseContainerSupport`.
 
 * `-XX:+UseContainerSupport`
   * Added in JDK10. Enables the memory support as well as the CPU support discussed below
 
-* `-XX:-PreferContainerQuotaForCPUCount`
+* `-XX:+PreferContainerQuotaForCPUCount`
   * Added in JDK11. Support for using the `cpu_quota` instead of `cpu_shares` for picking the number of cores the JVM uses
     to makes decisions such as how many compiler theads, GC threads and sizing of the fork join pool. 
 
@@ -41,7 +40,9 @@ Historically when running in a container all of these would need to be overridde
 
 ### Can the JVM just 'use" the docker CPU allocation instead?
 
-The short answer is `it depends`. There are three ways a Linux container can have its CPU limited:
+The short answer is `it depends`. There is no right answer, it depends on your infrastructure and application.
+
+There are three ways a Linux container can have its CPU limited:
 
 * `cpu_shares`
 
