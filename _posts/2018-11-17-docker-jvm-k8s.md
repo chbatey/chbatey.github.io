@@ -101,10 +101,18 @@ I'd expect to see utilisation in container clusters to drop with the defaults.
 
 ### Running in Kubernetes?
 
-Kubernetes sets `cpu_shares` based on `cpu.request` and `cpu_quotra` based on `cpu.limit`. For any version of Java
+Kubernetes sets `cpu_shares` based on `cpu.request` and `cpu_quota` based on `cpu.limit`. For any version of Java
 I'd avoid `cpu.limit` and for any JDK with the `cpu_share` support I'd set `cpu.request` to a much larger value that previously
 otherwise you'll end up with too few GC threads and a ForkJoin pool that won't be able to fully utilise a host
 when other containers are idle.
+
+## Summary
+
+Later JDK versions have made it far easier to run a JVM application in a Linux container. The memory support means
+that if you relied on JVM ergonomics before than you can do the same inside a container where as previously you 
+had to override all memory related settings. The CPU support for containers needs to be carefully evaluated for your
+application and environment. If you've relied on setting low `cpu_shares` and relying on using up unused cycles
+then you might get a shock.
 
 
 
