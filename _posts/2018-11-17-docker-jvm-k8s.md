@@ -111,9 +111,11 @@ when other containers are idle.
 Later JDK versions have made it far easier to run a JVM application in a Linux container. The memory support means
 that if you relied on JVM ergonomics before than you can do the same inside a container where as previously you 
 had to override all memory related settings. The CPU support for containers needs to be carefully evaluated for your
-application and environment. If you've relied on setting low `cpu_shares` and relying on using up unused cycles
-then you might get a shock.
+application and environment. If you've previously set low `cpu_shares` in environments like Kubernetes to increase utilisation 
+while relying on using up unused cycles then you might get a shock.
 
+I used the docker-compose file in [this repo](and://github.com/chbatey/docker-jvm-akka) to test various JDK versions
+and settings.
 
 
 
