@@ -114,7 +114,7 @@ had to override all memory related settings. The CPU support for containers need
 application and environment. If you've previously set low `cpu_shares` in environments like Kubernetes to increase utilisation 
 while relying on using up unused cycles then you might get a shock.
 
-I used the docker-compose file in [this repo](and://github.com/chbatey/docker-jvm-akka) to test various JDK versions
+I used the docker-compose file in [this repo](https://github.com/chbatey/docker-jvm-akka) to test various JDK versions
 and settings.
 
 
