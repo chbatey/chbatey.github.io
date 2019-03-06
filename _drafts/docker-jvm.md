@@ -1,26 +1,59 @@
 --
 layout: post
-title: 'Docker vs the JVM: Overview'
+title: 'JVM with Docker and Kubernetes in production'
 author: Christopher Batey
 comments: true
 tags:
 - docker
 ---
 
-Over the last year I've been working on a large project involving a set of services
-written primarily in Java, packaged in Docker containers, and
-deployed to a set of Kubernetes clusters.
+> Running something inside Docker is easy
 
-Where as there is a lot of hype around Docker, especially at JVM conferences
-I've attended such as Devoxx, Geecon, Javaland, I've found running the JVM inside
-a Docker container isn't as easy as I'd have expected. So follows is a set of
-posts with my lessons learned and all the stuff I wish I had known before I
-started the project. A lot of it is applicable even if you aren't using Docker.
-CGroups for instance, knowing a bit about how these work will help you out on
-any Systemd based Linux distribution.
+Said no one that has tried running a JVM inside Docker
+in a multi tenant production environment. 
 
-* Java base images
-* CGroups: Memory
-* Groups: CPU
-* File systems
-* Process spacew
+Having spent years running JVMs inside Docker via Kubernetes
+I can tell you that is isn't straightforward. Developers
+need a whole host of additional knowledge. It isn't easy
+to know upfront what that knowledge is or that any is required
+as Docker has received a mass of developer marketing saying
+it is easy as running a few commands.
+
+I now build JVM libraries for a living with the aim is to make
+them easy to run inside a container and that also isn't 
+plain sailing.
+
+In this article I'll discuss:
+* The history of JVMs inside containers because we're not all on JDK 11 are we?
+* What developers need to know to be successful
+* Memory issues 
+* CPU issues
+* Base images
+
+## History
+
+## Need to know
+
+### CPU allocations in containers
+
+* Specifically in Kubernetes
+
+### Memory limits
+
+### Disk access
+
+Default file systems?
+
+## Memory related issues
+
+### -XX:+UseCGroupMemoryLimitForHeap
+
+### -XX:+UseContainerSupport
+
+### -XX:+PreferContainerQuotaForCPUCount
+
+## CPU related issues
+
+## Shared memory, RAM disks, etc
+
+[] https://www.youtube.com/watch?v=6ePUiQuaUos
