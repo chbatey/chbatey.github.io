@@ -17,6 +17,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/01/spark-cassandra-
 A lot of people are getting excited about Apache Spark. The release of the open source <a
         href="https://github.com/datastax/spark-cassandra-connector" target="_blank">Cassandra
     connector</a>&nbsp;makes a technology like Spark even more accessible. Previously to get going you'd need a Hadoop infrastructure, now you can do away with all that and start using Spark directly against Cassandra, no HDFS required.
+
 <br/><br/><a href="http://christopher-batey.blogspot.co.uk/2015/01/spark-12-with-cassandra-21-setting-up.html"
              target="_blank">My last two posts on the topic were all about setting up a vagrant VM with Cassandra and
     Spark&nbsp;</a>installed. That's all well and good if you already working in the JVM ecosystem, you know what vagrant and Ansible are and you love your self a bit of SBT, but now it is time to take a step back. This post is aimed at getting you started with Spark and Cassandra without the assumption you know what sbt assembly means! By the end of this one the goal is to be able to execute (and understand what is going on) Spark/Cassandra jobs in the Spark REPL, and the next article will be submitting a standalone job.

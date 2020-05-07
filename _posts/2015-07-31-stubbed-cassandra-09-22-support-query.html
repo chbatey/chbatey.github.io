@@ -11,6 +11,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/07/stubbed-cassnadr
 ---
 
 Version 0.9.1 has a few nice features and has reduced a lot of technical debt. The first features aren't that noticeable from a users point of view:
+
 <br/><br/><b>Java 1.6
     support</b>! This was contributed by Andrew Tolbert as he wanted to test against the 1.* branch of the C* Java driver which still supports Java 1.6. I hadn't intentionally dropped 1.6 support but I had brought in a jar that was compiled against 1.7 and thus wouldn't run in a 1.6 JVM. The offending jar was an internal C* jar that could help with serialisation so it was quite a lot of work to replace the use of this jar with custom serialisation code.
 <br/>

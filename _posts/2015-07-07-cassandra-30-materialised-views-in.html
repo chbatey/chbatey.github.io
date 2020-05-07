@@ -13,6 +13,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/07/cassandra-30-mat
 
 Disclaimer: C* 3.0 is not released yet and all these examples are from a <a
         href="https://github.com/carlyeks/cassandra/tree/ticket/6477-8099">branch</a> that hasn't even made it to trunk yet.
+
 <br/><br/>So this feature started off as "<a href="https://issues.apache.org/jira/browse/CASSANDRA-6477">Global
     indexes</a>", the final result is not a global index and I don't trust any claim of distributed indexes anyhow. If your data is spread across 200 machines, ad-hoc queries aren't a good idea reagardless of how you implement them as you will often end up going to all 200 machines.
 <br/>

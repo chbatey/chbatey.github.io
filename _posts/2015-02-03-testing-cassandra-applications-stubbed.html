@@ -16,6 +16,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/testing-cassandr
     Cassandra</a> (Scassandra) is an open source test double for Cassandra. Martin Fowler has a<a
         href="http://www.martinfowler.com/bliki/TestDouble.html" target="_blank"> very general
     definition</a> of what a test double actually is.<br/>
+
 <br/>When I refer to a test double I mean stubbing out at the protocol level. So if your application makes calls over HTTP, your test double acts as an HTTP server where you can control the responses, and most importantly: inject faults.
 <a href="http://wiremock.org/" target="_blank">Wiremock</a> is a great example of a test double for HTTP.<br/>
 <br/>I like this kind of stubbing out as it allows me to really test drivers / network issues etc. Deploying to cloud environments where network/servers going down happens more frequently makes this even more important. If you're using a JVM language and all this happens in the same JVM it is also quick.

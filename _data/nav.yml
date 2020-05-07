@@ -1,0 +1,8 @@
+- name: Cassandra 
+  url: /cassandra/
+
+- name: JVM 
+  url: /jvm/
+
+- name: About
+  url: /about/

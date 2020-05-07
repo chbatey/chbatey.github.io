@@ -12,6 +12,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/cassandra-anti-p
 ---
 
 <div class="p1"><span class="s1">There’s a reason when you shard a relational databases you are then prevented from doing joins. Not only will they be slow and fraught with consistency issues but they are also terrible for availability. For that reason Cassandra doesn’t even let you join as every join would be a distributed join in Cassandra (you have more that one node right?).</span>
+
 </div>
 <div class="p2"><span class="s1"></span><br/></div>
 <div class="p1"><span class="s1">This often leads developers to do the join client side in code. Most of the time this is a bad idea, but let’s understand just how bad it can be.</span>

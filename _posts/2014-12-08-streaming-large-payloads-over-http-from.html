@@ -16,6 +16,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2014/12/streaming-large-
 ---
 
 Cassandra's normal use case is vast number of small read and write operations distributed equally across the cluster.
+
 <br/>
 <br/>However every so often you need to extract a large quantity of data in a single query. For example, say you are storing customer events that you normally query in small slices, however once a day you want to extract all of them for a particular customer. For customers with a lot of events than this could be many hundreds of megabytes of data.
 <br/>

@@ -16,6 +16,7 @@ blogger_orig_url: http://christopher-batey.blogspot.com/2015/02/a-simple-mysql-t
 I previously blogged about a Cassandra anti-pattern: <a
         href="http://christopher-batey.blogspot.co.uk/2015/02/cassandra-anti-pattern-distributed.html" target="_blank">Distributed
     joins</a>. This commonly happens when people move from a relational database to a Cassandra. I'm going to use the same example to show how to use Spark to migrate data that previously required joins into a denormalised model in Cassandra.
+
 <br/>
 <br/>So let's start with a simple set of tables in MySQL that store customer event information that references staff members and a store from a different table.
 <br/><br/>

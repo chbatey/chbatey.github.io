@@ -12,7 +12,8 @@ blogger_id: tag:blogger.com,1999:blog-4161315644722406995.post-35369997023097451
 blogger_orig_url: http://christopher-batey.blogspot.com/2015/05/cassandra-aggregates-min-max-avg-group.html
 ---
 
-Disclaimer: all this was against 2.2-beta so the syntax may have changed.<br/>
+Disclaimer: all this was against 2.2-beta so the syntax may have changed.
+
 <br/>Cassandra 2.2 introduced user defined functions and user defined aggregates. We can now do things like min, max and average on the server rather than having to bring all the data back to your application. Max and min are built in but we'll see how you could have implemented them your self.
 <br/><br/><h3>Max/Min</h3><br/>Here's an example table for us to try and implement max/min against.<br/><br/>
 <script src="https://gist.github.com/chbatey/2a6edaba343a05462443.js"></script>

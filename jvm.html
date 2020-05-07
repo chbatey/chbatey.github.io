@@ -1,26 +1,13 @@
 ---
-layout: default
+layout: page 
 title: JVM
 ---
-
-<div class="home">
-
-    <h1 class="page-heading">Posts</h1>
-
-    <ul class="post-list">
-        {% for post in site.posts %}
-        {% if post.tags contains "jvm" %}
-        <li>
-            <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
-
-            <h2>
-                <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-            </h2>
-        </li>
-        {% endif %}
-        {% endfor %}
-    </ul>
-
-    <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
-
-</div>
+<ul>
+  {% for post in site.tags.jvm limit:5 %}
+  <li>
+    <a href="{{ post.url }}">{{ post.title }}</a>
+    <span>{{ post.date | date_to_string }}</span>
+    {{ post.excerpt }}
+  </li>
+  {% endfor %}
+</ul>

@@ -15,6 +15,7 @@ I've <a href="http://christopher-batey.blogspot.co.uk/2014/08/getting-started-wi
         href="https://github.com/yammer/tenacity"
         target="_blank">Tenacity</a> and Breakerbox. The full code and outline of the example is located&nbsp;<a
         href="https://github.com/chbatey/integration-points-example" target="_blank">here</a>.<br/>
+
 <br/>Subsequently I've been using Dropwizard and Hystrix without Tenacity/Breakerbox and found it far simpler. I don't see a great deal of value in adding Tenacity and Breakerbox as Hystrix uses Netflix's configuration library Archaius which already comes with dynamic configuration via files, databases and Zookeeper.
 <br/><br/>So lets see what is involved in integrating Hystrix and Dropwizard.<br/>
 <br/>The example is the same from this article. Briefly, it is a single service that calls out to three other services:
