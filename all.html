@@ -2,19 +2,30 @@
 layout: page
 ---
 
+{% for post in site.posts %}
 
-    <h3 class="page-heading">All posts</h3>
+<article class="post-preview">
+    <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
+        <h5 class="post-title">{{ post.title }}</h5>
+    </a>
+    {% if post.subtitle %}
+    <h3 class="post-subtitle">{{ post.subtitle }}</h3>
+    {% else %}
+    <p class="post-subtitle">{{ post.excerpt | strip_html | truncatewords: 15 }}</p>
+    {% endif %}
+    <p class="post-meta">Posted by
+        {% if post.author %}
+        {{ post.author }}
+        {% else %}
+        {{ site.author }}
+        {% endif %}
+        on
+        {{ post.date | date: '%B %d, %Y' }} &middot;
+    </p>
+</article>
 
-    <ul class="post-list">
-        {% for post in site.posts %}
-        <li>
-            <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+<hr>
 
-            <h2>
-                <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-            </h2>
-        </li>
-        {% endfor %}
-    </ul>
+{% endfor %}
 
-    <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+<p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>

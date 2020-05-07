@@ -8,10 +8,9 @@ layout: default
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
 
-        {{ content }}
+        <!-- Tagged post list-->
 
-        <!-- Home Post List -->
-        {% for post in site.posts limit : 5 %}
+        {% for post in site.tags[page.tag] %}
 
         <article class="post-preview">
           <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
@@ -36,14 +35,6 @@ layout: default
         <hr>
 
         {% endfor %}
-
-        <!-- Pager -->
-        <div class="clearfix">
-          <a class="btn btn-primary float-right" href="{{"/all" | relative_url }}">View All Posts &rarr;</a>
-        </div>
-
-        <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
-
       </div>
     </div>
   </div>

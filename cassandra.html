@@ -1,13 +1,6 @@
 ---
-layout: page
+layout: tagged
 title: Cassandra
+tag: cassandra
 ---
-<ul>
-  {% for post in site.tags.cassandra limit:10 %}
-  <li>
-    <a href="{{ post.url }}">{{ post.title }}</a>
-    <span>{{ post.date | date_to_string }}</span>
-    {{ post.excerpt }}
-  </li>
-  {% endfor %}
-</ul>
+
