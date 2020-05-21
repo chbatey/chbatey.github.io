@@ -30,7 +30,7 @@ o.a.c.m.ClientRequest.{Read, Write, CASRead, CASWrite}.Latency.{Mean, Min, Max,
 
 You can see these in a JMX viewer such as jconsole:
 
-![JConsole Clinet Reqest Latenncy](/assets/cassandra_metrics/JconsoleClientRequestWriteLatency.png)
+<img src="/assets/cassandra_metrics/JconsoleClientRequestWriteLatency.png" class="img-fluid"/>
 
 You can get access to them via node tool with: `nodetool proxyhistorgrams`
 
@@ -61,7 +61,7 @@ cluster.
 
 Finally my favourite way of viewing the metrics is to push them out to Graphite:
 
-![ClientRequest Read Latency 99th](/assets/cassandra_metrics/ClientRequestReadLatency.png)
+<img src="/assets/cassandra_metrics/ClientRequestReadLatency.png" class="img-fluid"/>
 
 Notice that the 99th percentile is being plotted and the nodes in the cluster
 are being plotted separately. Don't be tempted to average the figures as this
