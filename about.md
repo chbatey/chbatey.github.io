@@ -1,6 +1,7 @@
 ---
 layout: page
 permalink: /about/
+title: About
 ---
 
 I am a software engineer working in London. I currently employed 

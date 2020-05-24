@@ -5,10 +5,14 @@ layout: default
 <!-- Page Header -->
 
   <div class="container">
+
+    {% include title.html title=page.title %}
+
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
 
         <!-- Tagged post list-->
+
 
         {% for post in site.tags[page.tag] %}
 

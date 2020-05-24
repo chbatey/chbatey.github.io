@@ -15,7 +15,9 @@ Even with Alpine and a cut down JVM you're still looking
 at a 70MiB image. Good compared to a 500MiB JDK image or a 200MiB debian slim image but still large compared to what
 native languages can produce.
 
-GraalVM native image promises to improve this situation. With GraalVM native image sizes can be as little as 7Mib for a
+GraalVM native image promises to improve this situation. 
+
+With GraalVM native image sizes can be as little as 7Mib for a
 Java application.
 
 Here are the steps to get a 7MiB Java docker image.
@@ -120,9 +122,7 @@ Let's start with the following `Dockerfile`:
 
 ```dockerfile
 FROM debian:buster-slim
-
 COPY output /opt/output
-
 CMD ["/opt/output"]
 ```
 
