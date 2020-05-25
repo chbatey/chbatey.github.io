@@ -4,16 +4,16 @@ permalink: /about/
 title: About
 ---
 
-I am a software engineer working in London. I currently employed 
+I am a software engineer working remotely. I am employed 
 by Lightbend where I work on building the [Akka toolkit](https://akka.io/).
 
-I've built systems with a with a range of technologies such as:
+I've built systems with a range of technologies such as:
 
 * Apache Cassandra
 * Akka
 * Kubernetes and Docker
 
 I'm passionate about my work and particularly enjoy studying program languages, 
-asynchronous programming and distributed systems.
+asynchronous programming, and distributed systems.
 
 You can reach me on twitter at [@chbatey](https://twitter.com/chbatey).

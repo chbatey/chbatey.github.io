@@ -3,6 +3,7 @@ layout: post
 title: 'GraalVM native image multistage Docker builds'
 author: Christopher Batey
 comments: true
+date: '2020-05-24'
 tags:
 - docker 
 - jvm 
