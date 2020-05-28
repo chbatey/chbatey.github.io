@@ -16,7 +16,7 @@ twitter_username: chbatey
 github_username:  chbatey
 permalink: none
 author: Christopher Batey
-udemy_jd_course: TODO
+udemy_jd_course: https://www.udemy.com/course/the-complete-guide-to-running-java-in-docker-and-kubernetes/?referralCode=89474707F75E84F76707
 
 # plugins:
   # - jekyll-seo-tag
