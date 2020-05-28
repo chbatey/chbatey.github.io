@@ -2,7 +2,7 @@
 layout: post
 title: 'CPU Shares in Kubernetes'
 author: Christopher Batey
-date: '2020-05-25'
+date: '2020-05-28'
 comments: true
 tags:
 - docker 

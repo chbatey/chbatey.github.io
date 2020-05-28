@@ -3,7 +3,7 @@ layout: post
 title: 'CPU Shares for Docker containers'
 author: Christopher Batey
 comments: true
-date: '2020-05-25'
+date: '2020-05-28'
 tags:
 - docker 
 - kubernetes

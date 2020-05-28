@@ -3,7 +3,7 @@ layout: post
 title: 'Tiny docker images for Java with GraalVM native image'
 author: Christopher Batey
 comments: true
-date: '2020-05-23'
+date: '2020-05-28'
 tags:
 - docker 
 - jvm 

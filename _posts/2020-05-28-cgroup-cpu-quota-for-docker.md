@@ -3,7 +3,7 @@ layout: post
 title: 'CPU Quota for Docker and Kubernetes'
 author: Christopher Batey
 comments: true
-date: '2020-05-25'
+date: '2020-05-28'
 tags:
 - docker 
 - kubernetes
