@@ -4,6 +4,7 @@ title: 'GraalVM native image multistage Docker builds'
 author: Christopher Batey
 comments: true
 date: '2020-05-28'
+short: 'Use Docker multistage builds to build GraalVM native images into Docker images'
 tags:
 - docker 
 - jvm 
