@@ -3,53 +3,62 @@ layout: default
 ---
 
 <!-- Page Header -->
-
-  <div class="container">
-
-
-    <div class="row">
-    {% include title.html title="Recent posts" %}
-    </div>
-
-    <div class="row">
-      <div class="col-lg-8 col-md-10 mx-auto">
-
-        {{ content }}
-
-        <!-- Home Post List -->
-        {% for post in site.posts limit : 5 %}
-
-        <article class="post-preview">
-          <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
-            <h5 class="post-title">{{ post.title }}</h5>
-          </a>
-            {% if post.subtitle %}
-            <h3 class="post-subtitle">{{ post.subtitle }}</h3>
-            {% else %}
-            <p class="post-subtitle">{{ post.excerpt | strip_html | truncatewords: 15 }}</p>
-            {% endif %}
-          <p class="post-meta">Posted by
-            {% if post.author %}
-            {{ post.author }}
-            {% else %}
-            {{ site.author }}
-            {% endif %}
-            on
-            {{ post.date | date: '%B %d, %Y' }} &middot;
-          </p>
-        </article>
-
-        <hr>
-
-        {% endfor %}
-
-        <!-- Pager -->
-        <div class="clearfix">
-          <a class="btn btn-primary float-right" href="{{"/all" | relative_url }}">View All Posts &rarr;</a>
+<header class="masthead">
+    <div class="container h-100">
+        <div class="row h-100 align-items-center">
+            <div class="col-12 text-center">
+                <h1 class="font-weight-light">Christopher Batey</h1>
+                <p class="lead">Teacher - Software Engineer - Consultant</p>
+            </div>
         </div>
-
-        <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
-
-      </div>
     </div>
-  </div>
+</header>
+
+<hr/>
+<div class="container">
+    <div class="row">
+        {% include title.html title="Recent posts" %}
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 col-md-10 mx-auto">
+
+            {{ content }}
+
+            <!-- Home Post List -->
+            {% for post in site.posts limit : 5 %}
+
+            <article class="post-preview">
+                <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
+                    <h5 class="post-title">{{ post.title }}</h5>
+                </a>
+                {% if post.subtitle %}
+                <h3 class="post-subtitle">{{ post.subtitle }}</h3>
+                {% else %}
+                <p class="post-subtitle">{{ post.excerpt | strip_html | truncatewords: 15 }}</p>
+                {% endif %}
+                <p class="post-meta">Posted by
+                    {% if post.author %}
+                    {{ post.author }}
+                    {% else %}
+                    {{ site.author }}
+                    {% endif %}
+                    on
+                    {{ post.date | date: '%B %d, %Y' }} &middot;
+                </p>
+            </article>
+
+            <hr>
+
+            {% endfor %}
+
+            <!-- Pager -->
+            <div class="clearfix">
+                <a class="btn btn-primary float-right" href="{{"/all" | relative_url }}">View All Posts &rarr;</a>
+            </div>
+
+            <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+
+        </div>
+    </div>
+</div>
