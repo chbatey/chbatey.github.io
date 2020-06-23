@@ -2,9 +2,10 @@
 layout: page
 permalink: /courses/
 title: Courses
+description: Onsite - Online - Self-pased
 ---
    
-When not fully employed I'm available for doing online and in person training. 
+When not fully employed I'm available for doing in person training. 
 If you're interested in arranging please [get in touch](mailto:christopher.batey@gmail.com).
 Otherwise, all courses are available on Udemy via the links below.
 

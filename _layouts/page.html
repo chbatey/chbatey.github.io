@@ -1,17 +1,20 @@
 ---
 layout: default
-title: Cats
 ---
   <div class="container">
-
-    <div class="row">
-    {% include title.html title=page.title %}
-    </div>
+    <header class="masthead">
+      <div class="container h-100 my-4 .bg-light">
+        <div class="row h-100 align-items-center">
+          <div class="col-12 text-center">
+            <h1 class="font-weight-light">{{ page.title }}</h1>
+            <p class="lead">{{ page.description }}</p>
+          </div>
+        </div>
+      </div>
+    </header>
 
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
-
-
         {{ content }}
 
       </div>

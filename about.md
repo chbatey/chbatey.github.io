@@ -4,8 +4,8 @@ permalink: /about/
 title: About
 ---
 
-I am a software engineer working remotely. I am employed 
-by Lightbend where I work on building the [Akka toolkit](https://akka.io/).
+Over the last 15 years I've worked as a software engineer, a consultant, and delivered training.
+I am currently employed by Lightbend where I work on building the [Akka toolkit](https://akka.io/).
 
 I've built systems with a range of technologies such as:
 

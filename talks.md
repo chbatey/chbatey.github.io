@@ -4,7 +4,7 @@ permalink: /talks/
 title: Talks
 ---
 
-### Co-locating Akka Cluster Shards with Kafka Partitions
+#### Co-locating Akka Cluster Shards with Kafka Partitions
 
 A demonstartion of how to do co-located distributed processing with Akka Cluster and Kafka.
 Assumes existing knowledge of Akka Cluster.
@@ -28,14 +28,14 @@ in containers you can [take my course on the topic]({{ site.udemy_jd_course }}).
 {% include youtubePlayer.html id="w1rZOY5gbvk" %}
 
 <br/>
-### The Java developer's guide to Asynchronous programming
+#### The Java developer's guide to Asynchronous programming
 
 All about Futures, CompletableFutures, and ListenableFutures.
 
 {% include youtubePlayer.html id="F32XoAPijTo" %}
 
 <br/>
-### Dynamo: the paper that changed the database world
+#### Dynamo: the paper that changed the database world
 
 The dynamo paper.
 
