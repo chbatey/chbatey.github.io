@@ -4,8 +4,8 @@ permalink: /courses/
 title: Courses
 ---
    
-When not fully employed I'm available for doing online and in person training. 
-If you're interested in arranging please [get in touch](mailto:christopher.batey@gmail.com).
+I'm available for doing online and in person training. 
+If you're interested in arranging please [get in touch](mailto:christopher.batey@cecg.io).
 Otherwise, all courses are available on Udemy via the links below.
 
 ### The complete guide to running JVM applications inside Docker/Kubernetes
